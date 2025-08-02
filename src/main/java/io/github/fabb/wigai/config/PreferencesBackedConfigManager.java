@@ -119,14 +119,6 @@ public class PreferencesBackedConfigManager implements ConfigManager {
     }
 
     /**
-     * Builds the connection URL string.
-     */
-    private String buildConnectionUrl() {
-        return String.format("http://%s:%d/sse", currentHost, currentPort);
-    }
-
-
-    /**
      * Gets the configured MCP server host.
      *
      * @return The MCP server host

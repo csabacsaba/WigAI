@@ -47,7 +47,7 @@ public class McpServerManager implements ConfigChangeObserver {
     private McpSyncServer mcpServer;
     private volatile boolean isRunning;
     private Server jettyServer;
-    private HttpServletSseServerTransportProvider transportProvider;
+    private HttpServletStreamableServerTransportProvider transportProvider;
 
     // Reusable controllers - initialized once during first start
     private BitwigApiFacade bitwigApiFacade;
@@ -109,8 +109,12 @@ public class McpServerManager implements ConfigChangeObserver {
             // 1. Instantiate ObjectMapper
             ObjectMapper objectMapper = new ObjectMapper();
 
-            // 2. Instantiate HttpServletSseServerTransportProvider
-            this.transportProvider = new HttpServletSseServerTransportProvider(objectMapper, "/mcp", "/sse");
+            // 2. Instantiate HttpServletStreamableServerTransportProvider
+            this.transportProvider = HttpServletStreamableServerTransportProvider
+                .builder()
+                .objectMapper(objectMapper)
+                .mcpEndpoint("/mcp")
+                .build();
 
             // 3. Configure the MCP server with tools
             // Note: Direct request/response logging with onRequest/onResponse methods is not
@@ -167,7 +171,6 @@ public class McpServerManager implements ConfigChangeObserver {
             this.jettyServer.start();
             isRunning = true;
             logger.info(String.format("MCP Server started on http://%s:%d/mcp", configManager.getMcpHost(), configManager.getMcpPort()));
-            logger.info(String.format("MCP SSE endpoint available at http://%s:%d/sse", configManager.getMcpHost(), configManager.getMcpPort()));
 
             // Show popup notification with connection info
             notifyServerStarted();
@@ -284,7 +287,7 @@ public class McpServerManager implements ConfigChangeObserver {
             return;
         }
 
-        String connectionUrl = String.format("http://%s:%d/sse",
+        String connectionUrl = String.format("http://%s:%d/mcp",
             configManager.getMcpHost(), configManager.getMcpPort());
         String message = String.format("WigAI MCP Server v%s started. Connect AI agents to: %s",
             extensionDefinition.getVersion(), connectionUrl);
@@ -307,7 +310,7 @@ public class McpServerManager implements ConfigChangeObserver {
             return;
         }
 
-        String connectionUrl = String.format("http://%s:%d/sse",
+        String connectionUrl = String.format("http://%s:%d/mcp",
             configManager.getMcpHost(), configManager.getMcpPort());
         String message = String.format("WigAI MCP Server v%s restarted. Connect AI agents to: %s",
             extensionDefinition.getVersion(), connectionUrl);
