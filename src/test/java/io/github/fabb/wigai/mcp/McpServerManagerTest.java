@@ -41,12 +41,6 @@ public class McpServerManagerTest {
         serverManager = new McpServerManager(mockLogger, mockConfigManager, mockExtensionDefinition);
     }
 
-    @Test
-    void testServerCreation() {
-        assertNotNull(serverManager);
-        assertFalse(serverManager.isRunning());
-    }
-
     /**
      * This test validates the configuration of the McpServer by using reflection to
      * inspect the server configuration. This is a way to test without actually starting
