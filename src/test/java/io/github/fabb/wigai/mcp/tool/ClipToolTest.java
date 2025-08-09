@@ -22,8 +22,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -159,9 +157,9 @@ class ClipToolTest {
             "launch_clip",
             "Track 'NonExistent' not found"
         );
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createErrorResponse(exception, structuredLogger);
-        
+
         // Validate error response format
         JsonNode errorNode = McpResponseTestUtils.validateErrorResponse(result);
         assertEquals("TRACK_NOT_FOUND", errorNode.get("code").asText());
@@ -179,10 +177,10 @@ class ClipToolTest {
             "message", "Clip launched successfully"
         );
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(clipData);
-        
+
         // This would have caught the double-wrapping bug
         McpResponseTestUtils.assertNotDoubleWrapped(result);
-        
+
         // Verify it's properly structured as an action response
         JsonNode dataNode = McpResponseTestUtils.validateActionResponse(result, "clip_launched");
         assertEquals("Bass", dataNode.get("track_name").asText());
@@ -193,16 +191,16 @@ class ClipToolTest {
     void testClipOperationFailureResponseFormat() throws Exception {
         // Test response format when clip operation fails but no exception is thrown
         ClipLaunchResult failureResult = ClipLaunchResult.error("CLIP_NOT_FOUND", "Clip at index 5 does not exist");
-        
+
         // Simulate the BitwigApiException that would be thrown in this case
         BitwigApiException exception = new BitwigApiException(
             ErrorCode.CLIP_NOT_FOUND,
-            "launch_clip", 
+            "launch_clip",
             "Clip at index 5 does not exist"
         );
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createErrorResponse(exception, structuredLogger);
-        
+
         // Validate error response format
         JsonNode errorNode = McpResponseTestUtils.validateErrorResponse(result);
         assertEquals("CLIP_NOT_FOUND", errorNode.get("code").asText());

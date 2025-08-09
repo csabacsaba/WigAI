@@ -8,7 +8,7 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
-
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -51,39 +51,39 @@ public class GetTrackDetailsTool {
               "additionalProperties": false
             }""";
 
-        var tool = new McpSchema.Tool(
-            TOOL_NAME,
-            "Retrieve detailed information for a specific track by index, name, or the currently selected track.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name(TOOL_NAME)
+            .description("Retrieve detailed information for a specific track by index, name, or the currently selected track.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithValidation(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithValidation(
                 TOOL_NAME,
-                arguments,
+                req.arguments(),
                 logger,
                 GetTrackDetailsTool::validateParameters,
-                (validated) -> {
-                    // Resolve target based on validated params
-                    return switch (validated.target()) {
-                        case INDEX -> bitwigApiFacade.getTrackDetailsByIndex(validated.trackIndex());
-                        case NAME -> bitwigApiFacade.getTrackDetailsByName(validated.trackName());
-                        case SELECTED -> {
-                            Map<String, Object> details = bitwigApiFacade.getSelectedTrackDetails();
-                            if (details == null) {
-                                throw new BitwigApiException(
-                                    ErrorCode.TRACK_NOT_FOUND,
-                                    TOOL_NAME,
-                                    "No track is currently selected"
-                                );
-                            }
-                            yield details;
+                (validated) -> switch (validated.target()) {
+                    case INDEX -> bitwigApiFacade.getTrackDetailsByIndex(validated.trackIndex());
+                    case NAME -> bitwigApiFacade.getTrackDetailsByName(validated.trackName());
+                    case SELECTED -> {
+                        Map<String, Object> details = bitwigApiFacade.getSelectedTrackDetails();
+                        if (details == null) {
+                            throw new BitwigApiException(
+                                ErrorCode.TRACK_NOT_FOUND,
+                                TOOL_NAME,
+                                "No track is currently selected"
+                            );
                         }
-                    };
+                        yield details;
+                    }
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     private enum Target { INDEX, NAME, SELECTED }

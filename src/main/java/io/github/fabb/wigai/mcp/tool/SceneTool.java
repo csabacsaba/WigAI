@@ -9,6 +9,7 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
@@ -43,21 +44,21 @@ public class SceneTool {
               "required": ["scene_index"]
             }""";
 
-        var tool = new McpSchema.Tool(
-            TOOL_NAME,
-            "Launch a scene in Bitwig by providing its zero-based index",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name(TOOL_NAME)
+            .description("Launch a scene in Bitwig by providing its zero-based index")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 TOOL_NAME,
                 logger,
                 new McpErrorHandler.ToolOperation() {
                     @Override
                     public Object execute() throws Exception {
                         // Parse and validate arguments
-                        LaunchSceneArguments args = parseArguments(arguments);
+                        LaunchSceneArguments args = parseArguments(req.arguments());
 
                         // Perform scene launch operation
                         var result = clipSceneController.launchSceneByIndex(args.sceneIndex());
@@ -75,7 +76,10 @@ public class SceneTool {
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**

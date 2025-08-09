@@ -19,7 +19,6 @@ import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
@@ -88,7 +87,7 @@ class StatusToolTest {
 
         // Assert: Validate response format using utility
         JsonNode dataNode = McpResponseTestUtils.validateObjectResponse(result);
-        
+
         // Verify status-specific fields
         assertTrue(dataNode.has("wigai_version"));
         assertTrue(dataNode.has("project_name"));
@@ -97,7 +96,7 @@ class StatusToolTest {
         assertTrue(dataNode.has("project_parameters"));
         assertTrue(dataNode.has("selected_track"));
         assertTrue(dataNode.has("selected_device"));
-        
+
         assertEquals("1.0.0", dataNode.get("wigai_version").asText());
         assertEquals("Test Project", dataNode.get("project_name").asText());
         assertTrue(dataNode.get("audio_engine_active").asBoolean());
@@ -111,9 +110,9 @@ class StatusToolTest {
             "status",
             "Failed to retrieve status"
         );
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createErrorResponse(exception, structuredLogger);
-        
+
         // Validate error response format
         JsonNode errorNode = McpResponseTestUtils.validateErrorResponse(result);
         assertEquals("BITWIG_API_ERROR", errorNode.get("code").asText());
@@ -126,7 +125,7 @@ class StatusToolTest {
         // Test that status responses are not double-wrapped
         Map<String, Object> statusData = createExpectedStatusData();
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(statusData);
-        
+
         // This would have caught the double-wrapping bug
         McpResponseTestUtils.assertNotDoubleWrapped(result);
     }
@@ -180,7 +179,7 @@ class StatusToolTest {
         data.put("project_name", "Test Project");
         data.put("audio_engine_active", true);
         data.put("transport", createMockTransportStatus());
-        
+
         // Convert ParameterInfo to Map for status response
         List<Map<String, Object>> paramMaps = new ArrayList<>();
         for (ParameterInfo param : createMockProjectParameters()) {
@@ -193,7 +192,7 @@ class StatusToolTest {
             paramMaps.add(paramMap);
         }
         data.put("project_parameters", paramMaps);
-        
+
         data.put("selected_track", createMockTrackInfo());
         data.put("selected_device", createMockDeviceInfo());
         return data;

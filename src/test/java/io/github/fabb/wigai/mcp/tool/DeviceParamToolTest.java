@@ -10,7 +10,6 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.github.fabb.wigai.common.logging.StructuredLogger;
 import io.github.fabb.wigai.features.DeviceController;
 import io.modelcontextprotocol.server.McpServerFeatures;
-import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,17 +19,12 @@ import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 
 /**
  * Unit tests for DeviceParamTool after migration to unified error handling architecture.
@@ -102,7 +96,7 @@ class DeviceParamToolTest {
         // Act: Simulate what the tool does - creates response data structure
         Map<String, Object> responseData = new LinkedHashMap<>();
         responseData.put("device_name", mockResult.deviceName());
-        
+
         List<Map<String, Object>> parametersArray = new ArrayList<>();
         for (ParameterInfo param : mockResult.parameters()) {
             Map<String, Object> paramMap = new LinkedHashMap<>();
@@ -113,21 +107,21 @@ class DeviceParamToolTest {
             parametersArray.add(paramMap);
         }
         responseData.put("parameters", parametersArray);
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(responseData);
 
         // Assert: Validate object response format
         JsonNode dataNode = McpResponseTestUtils.validateObjectResponse(result);
-        
+
         // Verify device parameter response structure
         assertTrue(dataNode.has("device_name"));
         assertTrue(dataNode.has("parameters"));
         assertEquals("Test Device", dataNode.get("device_name").asText());
-        
+
         JsonNode parametersNode = dataNode.get("parameters");
         assertTrue(parametersNode.isArray());
         assertEquals(2, parametersNode.size());
-        
+
         JsonNode firstParam = parametersNode.get(0);
         assertEquals(0, firstParam.get("index").asInt());
         assertEquals("Param 1", firstParam.get("name").asText());
@@ -178,10 +172,10 @@ class DeviceParamToolTest {
             }
             resultsArray.add(resultMap);
         }
-        
+
         long successCount = mockResults.stream().filter(r -> "success".equals(r.status())).count();
         long errorCount = mockResults.size() - successCount;
-        
+
         Map<String, Object> responseData = Map.of(
             "action", "multiple_parameters_set",
             "results", resultsArray,
@@ -192,16 +186,16 @@ class DeviceParamToolTest {
         // Assert: Validate action response format
         JsonNode dataNode = McpResponseTestUtils.validateActionResponse(result, "multiple_parameters_set");
         assertTrue(dataNode.has("results"));
-        
+
         JsonNode resultsNode = dataNode.get("results");
         assertTrue(resultsNode.isArray());
         assertEquals(2, resultsNode.size());
-        
+
         // Check first result (success)
         JsonNode firstResult = resultsNode.get(0);
         assertEquals(0, firstResult.get("parameter_index").asInt());
         assertEquals("success", firstResult.get("status").asText());
-        
+
         // Check second result (error)
         JsonNode secondResult = resultsNode.get(1);
         assertEquals(1, secondResult.get("parameter_index").asInt());
@@ -217,9 +211,9 @@ class DeviceParamToolTest {
             "get_selected_device_parameters",
             "No device is currently selected"
         );
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createErrorResponse(exception, structuredLogger);
-        
+
         // Validate error response format
         JsonNode errorNode = McpResponseTestUtils.validateErrorResponse(result);
         assertEquals("DEVICE_NOT_SELECTED", errorNode.get("code").asText());
@@ -235,10 +229,10 @@ class DeviceParamToolTest {
             "parameters", List.of()
         );
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(deviceData);
-        
+
         // This would have caught the double-wrapping bug
         McpResponseTestUtils.assertNotDoubleWrapped(result);
-        
+
         // Verify it's properly structured as an object response
         JsonNode dataNode = McpResponseTestUtils.validateObjectResponse(result);
         assertEquals("Test Device", dataNode.get("device_name").asText());

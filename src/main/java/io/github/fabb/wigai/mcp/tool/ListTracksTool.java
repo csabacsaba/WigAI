@@ -6,6 +6,7 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -40,27 +41,25 @@ public class ListTracksTool {
               "additionalProperties": false
             }""";
 
-        var tool = new McpSchema.Tool(
-            "list_tracks",
-            "List all tracks in the current project with summary information (name, type, selection state, parent group, basic device list). Supports optional filtering by track type.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name("list_tracks")
+            .description("List all tracks in the current project with summary information (name, type, selection state, parent group, basic device list). Supports optional filtering by track type.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithValidation(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithValidation(
                 "list_tracks",
-                arguments,
+                req.arguments(),
                 logger,
                 ListTracksTool::validateParameters,
-                (validatedParams) -> {
-                    List<Map<String, Object>> tracks = bitwigApiFacade.getAllTracksInfo(validatedParams.typeFilter());
-
-                    // Return tracks array directly - executeWithValidation will wrap it properly
-                    return tracks;
-                }
+                (validatedParams) -> bitwigApiFacade.getAllTracksInfo(validatedParams.typeFilter())
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**

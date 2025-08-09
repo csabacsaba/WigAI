@@ -17,11 +17,8 @@ import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -72,14 +69,14 @@ class TransportToolTest {
     void testTransportStartSuccessResponseFormat() throws Exception {
         // Arrange: Mock successful transport start
         when(transportController.startTransport()).thenReturn("Bitwig transport started.");
-        
+
         // Act: Simulate what the tool does - returns raw data that executeWithErrorHandling wraps
         Map<String, Object> responseData = Map.of(
             "action", "transport_started",
             "message", "Bitwig transport started."
         );
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(responseData);
-        
+
         // Assert: Validate action response format
         JsonNode dataNode = McpResponseTestUtils.validateActionResponse(result, "transport_started");
         assertEquals("Bitwig transport started.", dataNode.get("message").asText());
@@ -89,14 +86,14 @@ class TransportToolTest {
     void testTransportStopSuccessResponseFormat() throws Exception {
         // Arrange: Mock successful transport stop
         when(transportController.stopTransport()).thenReturn("Bitwig transport stopped.");
-        
+
         // Act: Simulate what the tool does
         Map<String, Object> responseData = Map.of(
             "action", "transport_stopped",
             "message", "Bitwig transport stopped."
         );
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(responseData);
-        
+
         // Assert: Validate action response format
         JsonNode dataNode = McpResponseTestUtils.validateActionResponse(result, "transport_stopped");
         assertEquals("Bitwig transport stopped.", dataNode.get("message").asText());
@@ -110,9 +107,9 @@ class TransportToolTest {
             "transport_start",
             "Transport is not available"
         );
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createErrorResponse(exception, structuredLogger);
-        
+
         // Validate error response format
         JsonNode errorNode = McpResponseTestUtils.validateErrorResponse(result);
         assertEquals("TRANSPORT_ERROR", errorNode.get("code").asText());
@@ -128,10 +125,10 @@ class TransportToolTest {
             "message", "Transport started"
         );
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(actionData);
-        
+
         // This would have caught the double-wrapping bug
         McpResponseTestUtils.assertNotDoubleWrapped(result);
-        
+
         // Verify it's properly structured as an action response
         JsonNode dataNode = McpResponseTestUtils.validateActionResponse(result, "transport_started");
         assertEquals("Transport started", dataNode.get("message").asText());

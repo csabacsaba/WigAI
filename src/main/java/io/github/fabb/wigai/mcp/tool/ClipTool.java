@@ -10,6 +10,7 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
@@ -48,19 +49,19 @@ public class ClipTool {
               "required": ["track_name", "clip_index"]
             }""";
 
-        var tool = new McpSchema.Tool(
-            TOOL_NAME,
-            "Launch a specific clip in Bitwig by providing track name and clip slot index",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name(TOOL_NAME)
+            .description("Launch a specific clip in Bitwig by providing track name and clip slot index")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 TOOL_NAME,
                 logger,
                 () -> {
                     // Parse and validate arguments
-                    LaunchClipArguments args = parseArguments(arguments);
+                    LaunchClipArguments args = parseArguments(req.arguments());
 
                     // Perform clip launch operation
                     ClipLaunchResult result = clipSceneController.launchClip(args.trackName(), args.clipIndex());
@@ -78,7 +79,10 @@ public class ClipTool {
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**

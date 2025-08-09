@@ -1,7 +1,6 @@
 package io.github.fabb.wigai.mcp.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.fabb.wigai.bitwig.BitwigApiFacade;
 import io.github.fabb.wigai.common.Logger;
 import io.github.fabb.wigai.common.error.BitwigApiException;
@@ -11,7 +10,6 @@ import io.github.fabb.wigai.common.logging.StructuredLogger;
 import io.github.fabb.wigai.features.ClipSceneController;
 import io.github.fabb.wigai.features.ClipSceneController.SceneLaunchResult;
 import io.modelcontextprotocol.server.McpServerFeatures;
-import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Map;
-import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,8 +29,6 @@ class SceneByNameToolTest {
     @Mock
     private Logger baseLogger;
     @Mock
-    private McpSyncServerExchange exchange;
-    @Mock
     private BitwigApiFacade bitwigApiFacade;
     @Mock
     private StructuredLogger.TimedOperation timedOperation;
@@ -44,17 +39,6 @@ class SceneByNameToolTest {
         when(structuredLogger.getBaseLogger()).thenReturn(baseLogger);
         when(structuredLogger.generateOperationId()).thenReturn("op-123");
         when(structuredLogger.startTimedOperation(any(), any(), any())).thenReturn(timedOperation);
-    }
-
-    private String getJsonFromResult(McpSchema.CallToolResult result) throws Exception {
-        // Extract JSON from the content list
-        if (result.content() != null && !result.content().isEmpty()) {
-            Object firstContent = result.content().get(0);
-            if (firstContent instanceof McpSchema.TextContent) {
-                return ((McpSchema.TextContent) firstContent).text();
-            }
-        }
-        throw new IllegalStateException("No TextContent found in CallToolResult");
     }
 
     @Test
@@ -131,9 +115,9 @@ class SceneByNameToolTest {
             "session_launchSceneByName",
             "Scene 'NonExistent' not found"
         );
-        
+
         McpSchema.CallToolResult result = McpErrorHandler.createErrorResponse(exception, structuredLogger);
-        
+
         // Validate error response format
         JsonNode errorNode = McpResponseTestUtils.validateErrorResponse(result);
         assertEquals("SCENE_NOT_FOUND", errorNode.get("code").asText());
@@ -151,10 +135,10 @@ class SceneByNameToolTest {
             "message", "Scene launched by name"
         );
         McpSchema.CallToolResult result = McpErrorHandler.createSuccessResponse(sceneData);
-        
+
         // This would have caught the double-wrapping bug
         McpResponseTestUtils.assertNotDoubleWrapped(result);
-        
+
         // Verify it's properly structured as an action response
         JsonNode dataNode = McpResponseTestUtils.validateActionResponse(result, "scene_launched");
         assertEquals("Chorus", dataNode.get("scene_name").asText());

@@ -10,6 +10,7 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -41,25 +42,22 @@ public class DeviceParamTool {
               "type": "object",
               "properties": {}
             }""";
-        var tool = new McpSchema.Tool(
-            GET_PARAMETERS_TOOL,
-            "Get the names and values of all addressable parameters of the user-selected device in Bitwig.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name(GET_PARAMETERS_TOOL)
+            .description("Get the names and values of all addressable parameters of the user-selected device in Bitwig.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 GET_PARAMETERS_TOOL,
                 logger,
                 new McpErrorHandler.ToolOperation() {
                     @Override
                     public Object execute() throws Exception {
                         DeviceController.DeviceParametersResult result = deviceController.getSelectedDeviceParameters();
-
-                        // Create response data
                         Map<String, Object> responseData = new LinkedHashMap<>();
                         responseData.put("device_name", result.deviceName());
-
                         List<Map<String, Object>> parametersArray = new ArrayList<>();
                         for (ParameterInfo param : result.parameters()) {
                             Map<String, Object> paramMap = new LinkedHashMap<>();
@@ -70,13 +68,15 @@ public class DeviceParamTool {
                             parametersArray.add(paramMap);
                         }
                         responseData.put("parameters", parametersArray);
-
                         return responseData;
                     }
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**
@@ -106,25 +106,21 @@ public class DeviceParamTool {
               },
               "required": ["parameter_index", "value"]
             }""";
-        var tool = new McpSchema.Tool(
-            SET_PARAMETER_TOOL,
-            "Set a specific value for a single parameter (by its index) of the user-selected device in Bitwig.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name(SET_PARAMETER_TOOL)
+            .description("Set a specific value for a single parameter (by its index) of the user-selected device in Bitwig.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 SET_PARAMETER_TOOL,
                 logger,
                 new McpErrorHandler.ToolOperation() {
                     @Override
                     public Object execute() throws Exception {
-                        // Parse and validate arguments
-                        SetParameterArguments args = parseSetParameterArguments(arguments);
-
-                        // Perform the parameter setting
+                        SetParameterArguments args = parseSetParameterArguments(req.arguments());
                         deviceController.setSelectedDeviceParameter(args.parameterIndex(), args.value());
-
                         return Map.of(
                             "action", "parameter_set",
                             "parameter_index", args.parameterIndex(),
@@ -135,7 +131,10 @@ public class DeviceParamTool {
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**
@@ -176,45 +175,36 @@ public class DeviceParamTool {
               },
               "required": ["parameters"]
             }""";
-        var tool = new McpSchema.Tool(
-            SET_MULTIPLE_PARAMETERS_TOOL,
-            "Set multiple parameter values (by index) of the user-selected device in Bitwig simultaneously.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name(SET_MULTIPLE_PARAMETERS_TOOL)
+            .description("Set multiple parameter values (by index) of the user-selected device in Bitwig simultaneously.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 SET_MULTIPLE_PARAMETERS_TOOL,
                 logger,
                 new McpErrorHandler.ToolOperation() {
                     @Override
                     public Object execute() throws Exception {
-                        // Parse and validate arguments
-                        SetMultipleParametersArguments args = parseSetMultipleParametersArguments(arguments);
-
-                        // Perform the batch parameter setting
+                        SetMultipleParametersArguments args = parseSetMultipleParametersArguments(req.arguments());
                         List<ParameterSettingResult> results = deviceController.setMultipleSelectedDeviceParameters(args.parameters());
-
-                        // Build response data
                         List<Map<String, Object>> resultsArray = new ArrayList<>();
                         for (ParameterSettingResult result : results) {
                             Map<String, Object> resultMap = new LinkedHashMap<>();
                             resultMap.put("parameter_index", result.parameter_index());
                             resultMap.put("status", result.status());
-
                             if ("success".equals(result.status())) {
                                 resultMap.put("new_value", result.new_value());
                             } else {
                                 resultMap.put("error_code", result.error_code());
                                 resultMap.put("message", result.message());
                             }
-
                             resultsArray.add(resultMap);
                         }
-
                         long successCount = results.stream().filter(r -> "success".equals(r.status())).count();
                         long errorCount = results.size() - successCount;
-
                         return Map.of(
                             "action", "multiple_parameters_set",
                             "results", resultsArray,
@@ -224,7 +214,10 @@ public class DeviceParamTool {
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**

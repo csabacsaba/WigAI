@@ -6,6 +6,7 @@ import io.github.fabb.wigai.mcp.McpErrorHandler;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import io.modelcontextprotocol.server.McpSyncServerExchange;
 import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
 
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -30,14 +31,14 @@ public class TransportTool {
               "type": "object",
               "properties": {}
             }""";
-        var tool = new McpSchema.Tool(
-            "transport_start",
-            "Start Bitwig's transport playbook.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name("transport_start")
+            .description("Start Bitwig's transport playbook.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 "transport_start",
                 logger,
                 () -> {
@@ -49,7 +50,10 @@ public class TransportTool {
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 
     /**
@@ -67,14 +71,14 @@ public class TransportTool {
               "type": "object",
               "properties": {}
             }""";
-        var tool = new McpSchema.Tool(
-            "transport_stop",
-            "Stop Bitwig's transport playback.",
-            schema
-        );
+        var tool = McpSchema.Tool.builder()
+            .name("transport_stop")
+            .description("Stop Bitwig's transport playback.")
+            .inputSchema(schema)
+            .build();
 
-        BiFunction<McpSyncServerExchange, Map<String, Object>, McpSchema.CallToolResult> handler =
-            (exchange, arguments) -> McpErrorHandler.executeWithErrorHandling(
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
                 "transport_stop",
                 logger,
                 () -> {
@@ -86,6 +90,9 @@ public class TransportTool {
                 }
             );
 
-        return new McpServerFeatures.SyncToolSpecification(tool, handler);
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
     }
 }
