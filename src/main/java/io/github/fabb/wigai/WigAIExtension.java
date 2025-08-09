@@ -71,7 +71,7 @@ public class WigAIExtension extends ControllerExtension implements ConfigChangeO
         try {
             // Create MCP servlet from the MCP server manager
             ServletHolder mcpServlet = mcpServerManager.createMcpServlet(MCP_ENDPOINT_PATH);
-            
+
             // Start Jetty server with the MCP servlet
             jettyServerManager.startServer(mcpServlet, MCP_ENDPOINT_PATH);
         } catch (Exception e) {
@@ -91,7 +91,7 @@ public class WigAIExtension extends ControllerExtension implements ConfigChangeO
         try {
             // Create MCP servlet from the MCP server manager
             ServletHolder mcpServlet = mcpServerManager.createMcpServlet(MCP_ENDPOINT_PATH);
-            
+
             // Restart Jetty server with the MCP servlet
             jettyServerManager.restartServer(mcpServlet, MCP_ENDPOINT_PATH);
         } catch (Exception e) {

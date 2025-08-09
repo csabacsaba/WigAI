@@ -129,11 +129,26 @@ public class BitwigApiFacade {
                 device.deviceType().markInterested();
             }
 
+            // Mark interest in commonly used channel controls
+            track.mute().markInterested();
+            track.solo().markInterested();
+            track.arm().markInterested();
+            track.volume().value().markInterested();
+            track.volume().displayedValue().markInterested();
+            track.pan().value().markInterested();
+            track.pan().displayedValue().markInterested();
+            track.isMonitoring().markInterested();
+            track.monitorMode().markInterested();
+
             ClipLauncherSlotBank trackSlots = track.clipLauncherSlotBank();
             for (int slotIndex = 0; slotIndex < trackSlots.getSizeOfBank(); slotIndex++) {
                 ClipLauncherSlot slot = trackSlots.getItemAt(slotIndex);
                 slot.hasContent().markInterested();
                 slot.isPlaying().markInterested();
+                slot.isRecording().markInterested();
+                slot.isPlaybackQueued().markInterested();
+                slot.color().markInterested();
+                slot.name().markInterested();
             }
         }
     }
@@ -919,10 +934,221 @@ public class BitwigApiFacade {
     }
 
     /**
+     * Gets detailed information about a track by absolute project index.
+     */
+    public Map<String, Object> getTrackDetailsByIndex(int index) throws BitwigApiException {
+        final String operation = "get_track_details";
+        return WigAIErrorHandler.executeWithErrorHandling(operation, () -> {
+            if (index < 0 || index >= trackBank.getSizeOfBank()) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Track index must be between 0 and " + (trackBank.getSizeOfBank() - 1) + ", got: " + index,
+                    Map.of("index", index, "max_index", trackBank.getSizeOfBank() - 1)
+                );
+            }
+            Track track = trackBank.getItemAt(index);
+            if (!track.exists().get()) {
+                throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, "Track at index " + index + " does not exist", Map.of("index", index));
+            }
+            return buildDetailedTrackInfo(track, index);
+        });
+    }
+
+    /**
+     * Gets detailed information about a track by exact name (case-sensitive).
+     */
+    public Map<String, Object> getTrackDetailsByName(String trackName) throws BitwigApiException {
+        final String operation = "get_track_details";
+        return WigAIErrorHandler.executeWithErrorHandling(operation, () -> {
+            ParameterValidator.validateNotEmpty(trackName, "track_name", operation);
+            int index = findTrackIndexByName(trackName);
+            return getTrackDetailsByIndex(index);
+        });
+    }
+
+    /**
+     * Gets detailed information about the currently selected track, or null if none.
+     */
+    public Map<String, Object> getSelectedTrackDetails() {
+        try {
+            if (!cursorTrack.exists().get()) {
+                return null;
+            }
+            String name = cursorTrack.name().get();
+            // Find index in current bank for consistency
+            int index = -1;
+            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+                Track t = trackBank.getItemAt(i);
+                if (t.exists().get() && name.equals(t.name().get())) {
+                    index = i;
+                    break;
+                }
+            }
+            // If not found in bank, attempt to build from cursor directly
+            if (index >= 0) {
+                return buildDetailedTrackInfo(trackBank.getItemAt(index), index);
+            } else {
+                // Build minimal from cursor and enrich where possible
+                Map<String, Object> info = new LinkedHashMap<>();
+                info.put("index", -1);
+                info.put("name", name);
+                info.put("type", cursorTrack.trackType().get().toLowerCase());
+                info.put("is_group", cursorTrack.isGroup().get());
+                info.put("parent_group_index", null);
+                info.put("activated", true);
+                info.put("color", "rgb(128,128,128)");
+                info.put("is_selected", true);
+                info.put("devices", List.of());
+                info.put("volume", cursorTrack.volume().value().get());
+                info.put("volume_str", safeDisplay(cursorTrack.volume().displayedValue().get()));
+                info.put("pan", cursorTrack.pan().value().get());
+                info.put("pan_str", safeDisplay(cursorTrack.pan().displayedValue().get()));
+                info.put("muted", cursorTrack.mute().get());
+                info.put("soloed", cursorTrack.solo().get());
+                info.put("armed", cursorTrack.arm().get());
+                info.put("monitor_enabled", cursorTrack.isMonitoring().get());
+                boolean cursorAuto = false;
+                try {
+                    String mode = cursorTrack.monitorMode().get();
+                    cursorAuto = mode != null && mode.toLowerCase().contains("auto");
+                } catch (Exception ignored) {}
+                info.put("auto_monitor_enabled", cursorAuto);
+                info.put("sends", List.of());
+                info.put("clips", List.of());
+                return info;
+            }
+        } catch (Exception e) {
+            logger.warn("BitwigApiFacade: Error getting selected track details: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private String safeDisplay(String value) {
+        return value != null ? value : "";
+    }
+
+    /**
+     * Builds a detailed track info map including base fields, device summaries, channel params,
+     * sends and clip launcher slots.
+     */
+    private Map<String, Object> buildDetailedTrackInfo(Track track, int index) {
+        Map<String, Object> trackInfo = new LinkedHashMap<>();
+        try {
+            // Basic fields similar to getAllTracksInfo
+            trackInfo.put("index", index);
+            String trackName = track.name().get();
+            trackInfo.put("name", trackName);
+            String trackType = track.trackType().get().toLowerCase();
+            trackInfo.put("type", trackType);
+            trackInfo.put("is_group", track.isGroup().get());
+            Map<String, Integer> parentMap = buildParentGroupMapping();
+            trackInfo.put("parent_group_index", parentMap.get(trackName));
+            trackInfo.put("activated", track.isActivated().get());
+            trackInfo.put("color", formatTrackColor(track.color().get()));
+            // Selected state
+            boolean isSelected = cursorTrack.exists().get() && trackName.equals(cursorTrack.name().get());
+            trackInfo.put("is_selected", isSelected);
+            // Devices
+            trackInfo.put("devices", getTrackDevices(index));
+
+            // Channel parameters
+            trackInfo.put("volume", track.volume().value().get());
+            trackInfo.put("volume_str", safeDisplay(track.volume().displayedValue().get()));
+            trackInfo.put("pan", track.pan().value().get());
+            trackInfo.put("pan_str", safeDisplay(track.pan().displayedValue().get()));
+            trackInfo.put("muted", track.mute().get());
+            trackInfo.put("soloed", track.solo().get());
+            trackInfo.put("armed", track.arm().get());
+            // Monitoring
+            boolean monitoring = false;
+            boolean autoMon = false;
+            try {
+                monitoring = track.isMonitoring().get();
+                String mode = track.monitorMode().get();
+                autoMon = mode != null && mode.toLowerCase().contains("auto");
+            } catch (Exception e) {
+                // ignore
+            }
+            trackInfo.put("monitor_enabled", monitoring);
+            trackInfo.put("auto_monitor_enabled", autoMon);
+
+            // Sends
+            List<Map<String, Object>> sends = new ArrayList<>();
+            try {
+                SendBank sendBank = track.sendBank();
+                int sendCount = sendBank.getSizeOfBank();
+                for (int i = 0; i < sendCount; i++) {
+                    Send send = sendBank.getItemAt(i);
+                    // Mark interest defensively in case not marked
+                    try {
+                        send.name().markInterested();
+                        send.value().markInterested();
+                        send.displayedValue().markInterested();
+                        send.isEnabled().markInterested();
+                    } catch (Exception ignored) {}
+                    Map<String, Object> sendMap = new LinkedHashMap<>();
+                    sendMap.put("name", send.name().get());
+                    sendMap.put("volume", send.value().get());
+                    sendMap.put("volume_str", safeDisplay(send.displayedValue().get()));
+                    sendMap.put("activated", send.isEnabled().get());
+                    sends.add(sendMap);
+                }
+            } catch (Exception e) {
+                logger.warn("BitwigApiFacade: Error reading sends for track " + trackName + ": " + e.getMessage());
+            }
+            trackInfo.put("sends", sends);
+
+            // Clips
+            List<Map<String, Object>> clips = new ArrayList<>();
+            try {
+                ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
+                int slots = slotBank.getSizeOfBank();
+                for (int s = 0; s < slots; s++) {
+                    ClipLauncherSlot slot = slotBank.getItemAt(s);
+                    Map<String, Object> slotMap = new LinkedHashMap<>();
+                    slotMap.put("slot_index", s);
+                    // Scene name from scene bank facade
+                    String sceneName = getSceneName(s);
+                    slotMap.put("scene_name", sceneName);
+                    boolean hasContent = false;
+                    try { hasContent = slot.hasContent().get(); } catch (Exception ignored) {}
+                    slotMap.put("has_content", hasContent);
+
+                    // Clip name from slot name value if available
+                    String clipName = null;
+                    try {
+                        clipName = slot.name().get();
+                        if (clipName != null && clipName.trim().isEmpty()) clipName = null;
+                    } catch (Exception ignored) {}
+                    slotMap.put("clip_name", clipName);
+                    try {
+                        Color c = slot.color().get();
+                        slotMap.put("clip_color", c != null ? formatTrackColor(c) : null);
+                    } catch (Exception e) {
+                        slotMap.put("clip_color", null);
+                    }
+                    // Removed unsupported length / is_looping fields
+
+                    // Playback state flags
+                    try { slotMap.put("is_playing", slot.isPlaying().get()); } catch (Exception e) { slotMap.put("is_playing", null); }
+                    try { slotMap.put("is_recording", slot.isRecording().get()); } catch (Exception e) { slotMap.put("is_recording", null); }
+                    try { slotMap.put("is_playback_queued", slot.isPlaybackQueued().get()); } catch (Exception e) { slotMap.put("is_playback_queued", null); }
+
+                    clips.add(slotMap);
+                }
+            } catch (Exception e) {
+                logger.warn("BitwigApiFacade: Error reading clip slots for track " + trackName + ": " + e.getMessage());
+            }
+            trackInfo.put("clips", clips);
+        } catch (Exception e) {
+            logger.warn("BitwigApiFacade: Error building detailed track info: " + e.getMessage());
+        }
+        return trackInfo;
+    }
+
+    /**
      * Formats a ColorValue object into an RGB string format.
-     *
-     * @param colorValue The Bitwig ColorValue to format
-     * @return RGB string in format "rgb(r,g,b)" where r,g,b are 0-255
      */
     private String formatTrackColor(Color colorValue) {
         try {

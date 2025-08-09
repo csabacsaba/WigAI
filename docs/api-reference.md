@@ -171,7 +171,7 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     *   `DEVICE_NOT_SELECTED`
     *   `INVALID_PARAMETER_INDEX`
     *   `INVALID_PARAMETER` (for value out of range)
-    *   `BITWIG_ERROR`
+    *   `BITWIG_API_ERROR`
 
 #### `set_selected_device_parameters`
 *   **Description**: Set multiple parameter values (by index 0-7) of the user-selected device in Bitwig simultaneously.
@@ -206,7 +206,7 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     ```
 *   **Errors**:
     *   Top-level: `DEVICE_NOT_SELECTED`, `INVALID_PARAMETER` (for overall payload issues)
-    *   Per-item in `results`: `INVALID_PARAMETER_INDEX`, `INVALID_PARAMETER`, `BITWIG_ERROR`
+    *   Per-item in `results`: `INVALID_PARAMETER_INDEX`, `INVALID_PARAMETER`, `BITWIG_API_ERROR`
 
 ### Session Control Commands
 
@@ -235,7 +235,7 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     *   `INVALID_ARGUMENT`: Missing or invalid parameters (e.g., empty track_name, negative clip_index)
     *   `TRACK_NOT_FOUND`: The specified track name was not found
     *   `CLIP_INDEX_OUT_OF_BOUNDS`: The clip index is outside the valid range for the track
-    *   `BITWIG_ERROR`: Internal error occurred while launching clip
+    *   `BITWIG_API_ERROR`: Internal error occurred while launching clip
 
 #### `session_launchSceneByIndex`
 *   **Description**: Launch an entire scene in Bitwig by providing its numerical index.
@@ -258,7 +258,7 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     ```
 *   **Errors**:
     *   `SCENE_NOT_FOUND`
-    *   `BITWIG_ERROR`
+    *   `BITWIG_API_ERROR`
 
 #### `session_launchSceneByName`
 *   **Description**: Launch an entire scene in Bitwig by providing its name.
@@ -282,7 +282,7 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     ```
 *   **Errors**:
     *   `SCENE_NOT_FOUND`
-    *   `BITWIG_ERROR`
+    *   `BITWIG_API_ERROR`
 
 ### Track Information Commands
 
@@ -355,9 +355,85 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     - `devices[].type`: Type of the device ("Instrument", "AudioFX", "NoteFX")
 *   **Errors**:
     *   `INVALID_PARAMETER`: Invalid track type filter
-    *   `BITWIG_ERROR`: Internal error occurred while retrieving tracks
+    *   `BITWIG_API_ERROR`: Internal error occurred while retrieving tracks
 
-*(Further commands related to track manipulation, clip launching, device control, etc., will be detailed here as they are defined and implemented.)*
+#### `get_track_details`
+*   **Description**: Retrieve detailed information for a specific track by index, name, or the currently selected track.
+*   **Parameters**:
+    ```json
+    {
+      "track_index": 3,
+      "track_name": "Drums",
+      "get_selected": true
+    }
+    ```
+    Rules:
+    - Exactly one of `track_index`, `track_name`, or `get_selected` may be provided. If none provided, behaves as `get_selected=true`.
+    - Providing multiple results in `INVALID_PARAMETER`.
+    - `track_name` match is case-sensitive.
+*   **Returns**:
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "index": 0,
+        "name": "Drums",
+        "type": "audio",
+        "is_group": false,
+        "parent_group_index": null,
+        "activated": true,
+        "color": "rgb(255,128,0)",
+        "is_selected": true,
+        "devices": [
+          { "index": 0, "name": "EQ Eight", "type": "AudioFX", "bypassed": false },
+          { "index": 1, "name": "Compressor", "type": "AudioFX", "bypassed": false }
+        ],
+        "volume": 0.63,
+        "volume_str": "-4.0 dB",
+        "pan": 0.5,
+        "pan_str": "C",
+        "muted": false,
+        "soloed": false,
+        "armed": false,
+        "monitor_enabled": true,
+        "auto_monitor_enabled": false,
+        "sends": [
+          { "name": "A", "volume": 0.4, "volume_str": "-8.0 dB", "activated": true },
+          { "name": "B", "volume": 0.0, "volume_str": "-inf", "activated": false }
+        ],
+        "clips": [
+          {
+            "slot_index": 0,
+            "scene_name": "Intro",
+            "has_content": true,
+            "clip_name": "Beat 1",
+            "clip_color": "rgb(255,128,0)",
+            "is_playing": false,
+            "is_recording": false,
+            "is_playback_queued": false
+          },
+          {
+            "slot_index": 1,
+            "scene_name": "Verse 1",
+            "has_content": false,
+            "clip_name": null,
+            "clip_color": null,
+            "is_playing": null,
+            "is_recording": null,
+            "is_playback_queued": null
+          }
+        ]
+      }
+    }
+    ```
+*   **Notes**:
+    - Uses the same track index semantics and device summary format as `list_tracks`.
+    - Color values are returned as RGB strings (e.g., `rgb(255,128,0)`).
+    - Clip slot provides clip name and state flags; clip length and loop status are not exposed via slot API and are omitted.
+*   **Errors**:
+    *   `INVALID_PARAMETER`: Invalid combination or types of parameters
+    *   `TRACK_NOT_FOUND`: Target track not found or no track selected when required
+    *   `BITWIG_API_ERROR`: Internal Bitwig API error
 
 ### Error Handling
 

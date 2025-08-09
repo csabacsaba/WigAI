@@ -171,6 +171,64 @@ public class BitwigApiFacadeTest {
         lenient().when(mockCursorTrack.solo()).thenReturn(mock(com.bitwig.extension.controller.api.SoloValue.class));
         lenient().when(mockCursorTrack.arm()).thenReturn(mock(com.bitwig.extension.controller.api.SettableBooleanValue.class));
 
+        // Additional stubs for newly monitored track channel controls
+        lenient().when(mockTrack.mute()).thenReturn(mock(com.bitwig.extension.controller.api.SettableBooleanValue.class));
+        lenient().when(mockTrack.solo()).thenReturn(mock(com.bitwig.extension.controller.api.SoloValue.class));
+        lenient().when(mockTrack.arm()).thenReturn(mock(com.bitwig.extension.controller.api.SettableBooleanValue.class));
+        // Volume
+        SettableRangedValue mockVolumeValue = mock(SettableRangedValue.class);
+        SettableStringValue mockVolumeDisplay = mock(SettableStringValue.class);
+        lenient().when(mockVolumeValue.get()).thenReturn(0.5);
+        lenient().when(mockVolumeDisplay.get()).thenReturn("-6.0 dB");
+        RemoteControl mockVolume = mock(RemoteControl.class);
+        lenient().when(mockVolume.value()).thenReturn(mockVolumeValue);
+        lenient().when(mockVolume.displayedValue()).thenReturn(mockVolumeDisplay);
+        lenient().when(mockTrack.volume()).thenReturn(mockVolume);
+        // Pan
+        SettableRangedValue mockPanValue = mock(SettableRangedValue.class);
+        SettableStringValue mockPanDisplay = mock(SettableStringValue.class);
+        lenient().when(mockPanValue.get()).thenReturn(0.5);
+        lenient().when(mockPanDisplay.get()).thenReturn("C");
+        RemoteControl mockPan = mock(RemoteControl.class);
+        lenient().when(mockPan.value()).thenReturn(mockPanValue);
+        lenient().when(mockPan.displayedValue()).thenReturn(mockPanDisplay);
+        lenient().when(mockTrack.pan()).thenReturn(mockPan);
+        // Monitoring
+        com.bitwig.extension.controller.api.BooleanValue mockIsMonitoring = mock(com.bitwig.extension.controller.api.BooleanValue.class);
+        lenient().when(mockIsMonitoring.get()).thenReturn(true);
+        lenient().when(mockTrack.isMonitoring()).thenReturn(mockIsMonitoring);
+        SettableEnumValue mockMonitorMode = mock(SettableEnumValue.class);
+        lenient().when(mockMonitorMode.get()).thenReturn("AUTO");
+        lenient().when(mockTrack.monitorMode()).thenReturn(mockMonitorMode);
+        // Cursor track additional channel controls
+        RemoteControl mockCursorVolume = mock(RemoteControl.class);
+        SettableRangedValue mockCursorVolVal = mock(SettableRangedValue.class);
+        SettableStringValue mockCursorVolDisp = mock(SettableStringValue.class);
+        lenient().when(mockCursorVolVal.get()).thenReturn(0.4);
+        lenient().when(mockCursorVolDisp.get()).thenReturn("-8.0 dB");
+        lenient().when(mockCursorVolume.value()).thenReturn(mockCursorVolVal);
+        lenient().when(mockCursorVolume.displayedValue()).thenReturn(mockCursorVolDisp);
+        lenient().when(mockCursorTrack.volume()).thenReturn(mockCursorVolume);
+        RemoteControl mockCursorPan = mock(RemoteControl.class);
+        SettableRangedValue mockCursorPanVal = mock(SettableRangedValue.class);
+        SettableStringValue mockCursorPanDisp = mock(SettableStringValue.class);
+        lenient().when(mockCursorPanVal.get()).thenReturn(0.5);
+        lenient().when(mockCursorPanDisp.get()).thenReturn("C");
+        lenient().when(mockCursorPan.value()).thenReturn(mockCursorPanVal);
+        lenient().when(mockCursorPan.displayedValue()).thenReturn(mockCursorPanDisp);
+        lenient().when(mockCursorTrack.pan()).thenReturn(mockCursorPan);
+        com.bitwig.extension.controller.api.BooleanValue mockCursorMonitoring = mock(com.bitwig.extension.controller.api.BooleanValue.class);
+        lenient().when(mockCursorMonitoring.get()).thenReturn(true);
+        lenient().when(mockCursorTrack.isMonitoring()).thenReturn(mockCursorMonitoring);
+        SettableEnumValue mockCursorMonitorMode = mock(SettableEnumValue.class);
+        lenient().when(mockCursorMonitorMode.get()).thenReturn("AUTO");
+        lenient().when(mockCursorTrack.monitorMode()).thenReturn(mockCursorMonitorMode);
+        // Clip slot extra properties
+        lenient().when(mockClipLauncherSlot.isRecording()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
+        lenient().when(mockClipLauncherSlot.isPlaybackQueued()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
+        lenient().when(mockClipLauncherSlot.color()).thenReturn(mock(com.bitwig.extension.controller.api.SettableColorValue.class));
+        lenient().when(mockClipLauncherSlot.name()).thenReturn(mock(com.bitwig.extension.controller.api.SettableStringValue.class));
+
         // Setup parameter count mocks
         when(mockParameterBank.getParameterCount()).thenReturn(8);  // Default to 8 for device parameters
         when(mockProjectParameterBank.getParameterCount()).thenReturn(8);  // Default to 8 for project parameters
