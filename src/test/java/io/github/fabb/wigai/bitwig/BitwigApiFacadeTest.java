@@ -85,11 +85,11 @@ public class BitwigApiFacadeTest {
         when(mockHost.createApplication()).thenReturn(mockApplication);
         when(mockHost.createCursorTrack(0, 0)).thenReturn(mockCursorTrack);
         when(mockCursorTrack.createCursorDevice()).thenReturn(mockCursorDevice);
-        when(mockCursorDevice.createCursorRemoteControlsPage(128)).thenReturn(mockParameterBank);
+        when(mockCursorDevice.createCursorRemoteControlsPage(8)).thenReturn(mockParameterBank);
 
         // Setup new mocks for story 5.2
         when(mockHost.createMasterTrack(0)).thenReturn(mockMasterTrack);
-        when(mockMasterTrack.createCursorRemoteControlsPage(128)).thenReturn(mockProjectParameterBank);
+        when(mockMasterTrack.createCursorRemoteControlsPage(8)).thenReturn(mockProjectParameterBank);
 
         // Setup TrackBank mocks (new for clip launching) - use smaller sizes for testing
         when(mockHost.createTrackBank(128, 0, 128)).thenReturn(mockTrackBank);
@@ -112,6 +112,7 @@ public class BitwigApiFacadeTest {
         lenient().when(mockCursorDevice.exists()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
         lenient().when(mockCursorDevice.name()).thenReturn(mock(com.bitwig.extension.controller.api.SettableStringValue.class));
         lenient().when(mockCursorDevice.isEnabled()).thenReturn(mock(com.bitwig.extension.controller.api.SettableBooleanValue.class));
+        lenient().when(mockRemoteControl.exists()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
         lenient().when(mockRemoteControl.name()).thenReturn(mock(com.bitwig.extension.controller.api.SettableStringValue.class));
         lenient().when(mockRemoteControl.value()).thenReturn(mock(com.bitwig.extension.controller.api.SettableRangedValue.class));
         lenient().when(mockRemoteControl.displayedValue()).thenReturn(mock(com.bitwig.extension.controller.api.SettableStringValue.class));

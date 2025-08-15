@@ -60,11 +60,11 @@ public class BitwigApiFacade {
         // Initialize device control - use CursorTrack.createCursorDevice() instead of deprecated host.createCursorDevice()
         this.cursorTrack = host.createCursorTrack(0, 0);
         this.cursorDevice = cursorTrack.createCursorDevice();
-        this.deviceParameterBank = cursorDevice.createCursorRemoteControlsPage(128);
+        this.deviceParameterBank = cursorDevice.createCursorRemoteControlsPage(8);
 
         // Initialize project parameter access via MasterTrack (project parameters)
         MasterTrack masterTrack = host.createMasterTrack(0);
-        this.projectParameterBank = masterTrack.createCursorRemoteControlsPage(128);
+        this.projectParameterBank = masterTrack.createCursorRemoteControlsPage(8);
 
         // Initialize track bank for clip launching (support up to 128 tracks and 128 scenes for full functionality)
         this.trackBank = host.createTrackBank(128, 0, 128);
@@ -86,6 +86,7 @@ public class BitwigApiFacade {
         // Mark interest in all device parameter properties to enable value access
         for (int i = 0; i < deviceParameterBank.getParameterCount(); i++) {
             RemoteControl parameter = deviceParameterBank.getParameter(i);
+            parameter.exists().markInterested();
             parameter.name().markInterested();
             parameter.value().markInterested();
             parameter.displayedValue().markInterested();
@@ -270,16 +271,20 @@ public class BitwigApiFacade {
 
         for (int i = 0; i < deviceParameterBank.getParameterCount(); i++) {
             RemoteControl parameter = deviceParameterBank.getParameter(i);
-            String name = parameter.name().get();
-            double value = parameter.value().get();
-            String displayValue = parameter.displayedValue().get();
+            boolean exists = parameter.exists().get();
 
-            // Handle null or empty names
-            if (name != null && name.trim().isEmpty()) {
-                name = null;
+            if (exists) {
+                String name = parameter.name().get();
+                double value = parameter.value().get();
+                String displayValue = parameter.displayedValue().get();
+
+                // Handle null or empty names
+                if (name != null && name.trim().isEmpty()) {
+                    name = null;
+                }
+
+                parameters.add(new ParameterInfo(i, name, value, displayValue));
             }
-
-            parameters.add(new ParameterInfo(i, name, value, displayValue));
         }
 
         logger.info("BitwigApiFacade: Retrieved " + parameters.size() + " parameters");

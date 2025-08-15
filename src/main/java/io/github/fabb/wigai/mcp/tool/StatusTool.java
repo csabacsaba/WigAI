@@ -53,7 +53,6 @@ public class StatusTool {
                             for (io.github.fabb.wigai.common.data.ParameterInfo param : projectParams) {
                                 Map<String, Object> paramMap = new LinkedHashMap<>();
                                 paramMap.put("index", param.index());
-                                paramMap.put("exists", true);
                                 paramMap.put("name", param.name());
                                 paramMap.put("value", param.value());
                                 paramMap.put("display_value", param.display_value());
