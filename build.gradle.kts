@@ -1,5 +1,6 @@
-import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.bundling.Zip
+import org.gradle.api.plugins.jvm.JvmTestSuite
 
 plugins {
     // Apply the Java plugin to add support for Java
@@ -26,7 +27,6 @@ dependencies {
     // MCP Java SDK
     // you can look up the documentation with tool context7
     // example implementation: https://modelcontextprotocol.io/sdk/java/mcp-server
-    // version 0.10.0 uses MCP specification version 2024-11-05: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports
     implementation(platform("io.modelcontextprotocol.sdk:mcp-bom:0.11.0"))
     implementation("io.modelcontextprotocol.sdk:mcp")
     implementation("jakarta.servlet:jakarta.servlet-api:6.0.0")
@@ -47,9 +47,14 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-tasks.withType<Test> {
-    // Use JUnit Platform for unit tests
-    useJUnitPlatform()
+// Configure testing using the Test Suites DSL (avoids deprecated auto-loading in Gradle 9)
+testing {
+    suites {
+        // Configure the built-in 'test' suite to use JUnit Jupiter
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter()
+        }
+    }
 }
 
 // Configure the Shadow JAR (fat JAR with all dependencies)
