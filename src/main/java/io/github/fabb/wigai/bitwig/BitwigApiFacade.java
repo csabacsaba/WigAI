@@ -737,20 +737,14 @@ public class BitwigApiFacade {
 
             // Get device parameters
             List<Map<String, Object>> parametersArray = new ArrayList<>();
-            for (int i = 0; i < deviceParameterBank.getParameterCount(); i++) {
-                RemoteControl parameter = deviceParameterBank.getParameter(i);
-                String name = parameter.name().get();
-
-                // Only include parameters that exist and have names
-                if (name != null && !name.trim().isEmpty()) {
+            for (ParameterInfo p : getSelectedDeviceParameters()) {
                     Map<String, Object> paramMap = new LinkedHashMap<>();
-                    paramMap.put("index", i);
-                    paramMap.put("name", name);
-                    paramMap.put("value", parameter.value().get());
-                    paramMap.put("display_value", parameter.displayedValue().get());
+                    paramMap.put("index", p.index());
+                    paramMap.put("name", p.name());
+                    paramMap.put("value", p.value());
+                    paramMap.put("display_value", p.display_value());
                     parametersArray.add(paramMap);
-                }
-            }
+                            }
             deviceInfo.put("parameters", parametersArray);
 
             logger.info("BitwigApiFacade: Retrieved selected device info: " + cursorDevice.name().get());
