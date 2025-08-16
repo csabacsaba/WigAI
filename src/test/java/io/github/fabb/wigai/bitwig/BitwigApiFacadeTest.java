@@ -439,24 +439,29 @@ public class BitwigApiFacadeTest {
             com.bitwig.extension.controller.api.SettableStringValue mockParamName = mock(com.bitwig.extension.controller.api.SettableStringValue.class);
             com.bitwig.extension.controller.api.SettableRangedValue mockParamValue = mock(com.bitwig.extension.controller.api.SettableRangedValue.class);
             com.bitwig.extension.controller.api.SettableStringValue mockParamDisplay = mock(com.bitwig.extension.controller.api.SettableStringValue.class);
+            com.bitwig.extension.controller.api.BooleanValue mockParamExists = mock(com.bitwig.extension.controller.api.BooleanValue.class);
 
             if (i == 0) {
                 when(mockParamName.get()).thenReturn("Cutoff");
                 when(mockParamValue.get()).thenReturn(0.7);
                 when(mockParamDisplay.get()).thenReturn("70%");
+                when(mockParamExists.get()).thenReturn(true);
             } else if (i == 2) {
                 when(mockParamName.get()).thenReturn("Resonance");
                 when(mockParamValue.get()).thenReturn(0.3);
                 when(mockParamDisplay.get()).thenReturn("30%");
+                when(mockParamExists.get()).thenReturn(true);
             } else {
                 when(mockParamName.get()).thenReturn("");  // Empty name for unused parameters
                 when(mockParamValue.get()).thenReturn(0.0);
                 when(mockParamDisplay.get()).thenReturn("0%");
+                when(mockParamExists.get()).thenReturn(false);
             }
 
             when(mockParam.name()).thenReturn(mockParamName);
             when(mockParam.value()).thenReturn(mockParamValue);
             when(mockParam.displayedValue()).thenReturn(mockParamDisplay);
+            when(mockParam.exists()).thenReturn(mockParamExists);
             when(mockParameterBank.getParameter(i)).thenReturn(mockParam);
         }
 
@@ -545,8 +550,11 @@ public class BitwigApiFacadeTest {
 
             com.bitwig.extension.controller.api.SettableStringValue mockParamName = mock(com.bitwig.extension.controller.api.SettableStringValue.class);
             when(mockParamName.get()).thenReturn("");  // Empty names
-
+            // Ensure parameters are treated as non-existent to avoid NPEs in exists().get()
+            com.bitwig.extension.controller.api.BooleanValue mockParamExists = mock(com.bitwig.extension.controller.api.BooleanValue.class);
+            when(mockParamExists.get()).thenReturn(false);
             when(mockParam.name()).thenReturn(mockParamName);
+            when(mockParam.exists()).thenReturn(mockParamExists);
             when(mockParameterBank.getParameter(i)).thenReturn(mockParam);
         }
 
