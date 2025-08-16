@@ -20,16 +20,20 @@ Building upon the track and clip information retrieval from Epics 6 and 7, and t
 *   **Description:** Retrieves a list of all devices on a specified track.
 *   **Request Parameters:**
     *   `track_index` (integer, optional): 0-based index of the track.
-    *   `track_name` (string, optional): Name of the track.
-    *   `get_for_selected_track` (boolean, optional): If `true` (and no `track_index` or `track_name` is provided), lists devices for the currently selected track. Defaults to `true` if no track identifier is specified.
+    *   `track_name` (string, optional): Name of the track (case-sensitive, exact match).
+    *   `get_selected` (boolean, optional): If `true`, lists devices for the currently selected track. Defaults to `true` when no parameter is provided.
+    Rules:
+    - Exactly one of `track_index`, `track_name`, or `get_selected` may be provided. If none provided, behaves as `get_selected=true`.
+    - Providing multiple results in `INVALID_PARAMETER`.
 *   **Response Body:** An array of device summary objects, each containing:
     *   `index` (integer): 0-based position in the track's device chain.
     *   `name` (string): Name of the device.
-    *   `type` (string): Type of the device (e.g., "Instrument", "AudioFX", "NoteFX").
-    *   `is_bypassed` (boolean): True if the device is currently bypassed.
-    *   `is_expanded` (boolean): True if the device GUI is expanded within the device chain view.
-    *   `is_window_open` (boolean): True if the plugin window (if it has one) is currently open.
+    *   `type` (string): One of "Instrument", "AudioFX", "NoteFX", or "Unknown".
+    *   `bypassed` (boolean): True if the device is currently bypassed.
     *   `is_selected` (boolean): True if this device is the currently selected device in Bitwig Studio.
+    Optional (may be omitted or null if unsupported by API):
+    *   `is_expanded` (boolean, optional)
+    *   `is_window_open` (boolean, optional)
 
 ### 4.2. `get_device_details`
 

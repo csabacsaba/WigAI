@@ -435,9 +435,202 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     *   `TRACK_NOT_FOUND`: Target track not found or no track selected when required
     *   `BITWIG_API_ERROR`: Internal Bitwig API error
 
+#### `list_devices_on_track`
+*   **Description**: List devices on a specific track (by index, name, or currently selected track) with summary fields and selection state.
+*   **Parameters**:
+    ```json
+    {
+      "track_index": 3,
+      "track_name": "Drums",
+      "get_selected": true
+    }
+    ```
+    Rules:
+    - Exactly one of `track_index`, `track_name`, or `get_selected` may be provided. If none provided, behaves as `get_selected=true`.
+    - `track_name` match is case-sensitive (exact).
+    - Providing multiple results in `INVALID_PARAMETER`.
+*   **Returns**:
+    ```json
+    {
+      "status": "success",
+      "data": [
+        {
+          "index": 0,
+          "name": "EQ Eight",
+          "type": "AudioFX",
+          "bypassed": false,
+          "is_selected": false
+        },
+        {
+          "index": 1,
+          "name": "Compressor",
+          "type": "AudioFX",
+          "bypassed": false,
+          "is_selected": true
+        }
+      ]
+    }
+    ```
+*   **Notes**:
+    - `type`: One of "Instrument", "AudioFX", "NoteFX", or "Unknown".
+    - Deterministic enumeration: results are ordered by 0-based device chain index; only top-level devices are included (no recursion into container devices).
+    - Selection semantics:
+      - If the target track is not the globally selected track, `is_selected` is `false` for all devices.
+      - If the target track is the globally selected track, compare against the global CursorDevice; prefer same-track index match, otherwise name match on that track (first match if ambiguous).
+    - Optional UI-state fields (`is_expanded`, `is_window_open`) may be omitted or null if not provided by the Bitwig Controller API.
+
+*   **Examples**:
+
+    Request by index:
+    ```json
+    { "track_index": 2 }
+    ```
+
+    Request by name:
+    ```json
+    { "track_name": "Drums" }
+    ```
+
+    Request selected track:
+    ```json
+    { "get_selected": true }
+    ```
+
+    Default (no parameters → behaves as get_selected=true):
+    ```json
+    { }
+    ```
+
+    Empty device list response:
+    ```json
+    {
+      "status": "success",
+      "data": []
+    }
+    ```
+
+    Error response (standardized envelope):
+    ```json
+    {
+      "status": "error",
+      "error": {
+        "code": "TRACK_NOT_FOUND",
+        "message": "No track is currently selected",
+        "operation": "list_devices_on_track"
+      }
+    }
+    ```
+
+*   **Errors**:
+    *   `INVALID_PARAMETER`: Invalid combination or types of parameters
+    *   `INVALID_RANGE`: Index outside of valid range
+    *   `TRACK_NOT_FOUND`: Target track not found or no track selected when required
+    *   `BITWIG_API_ERROR`: Internal Bitwig API error
+
+### Device Information Commands
+
+#### `get_device_details`
+- Description: Retrieve detailed information for a specific device by track/device identifiers or for the currently selected device, including current remote control page parameters and all page names with selection state.
+- Parameters:
+```json
+{
+  "track_index": 1,
+  "track_name": "Bass",
+  "device_index": 0,
+  "device_name": "EQ Eight",
+  "get_for_selected_device": true
+}
+```
+Rules:
+- Two targeting modes:
+  - Selected-device mode: if `get_for_selected_device=true` OR no identifiers provided, return the globally selected device.
+  - Target-by-identifiers mode: if any of `track_index`, `track_name`, `device_index`, or `device_name` is provided, target that specific device.
+- Constraints:
+  - Providing `get_for_selected_device=true` together with any identifier → `INVALID_PARAMETER`.
+  - Exactly one of `track_index` OR `track_name` must be provided in identifier mode; not both → `INVALID_PARAMETER`.
+  - Exactly one of `device_index` OR `device_name` must be provided in identifier mode; not both → `INVALID_PARAMETER`.
+  - `track_name` and `device_name` require case-sensitive exact matches.
+  - If `get_for_selected_device=false` (or omitted) and no identifiers are provided → `INVALID_PARAMETER`.
+
+- Returns:
+```json
+{
+  "status": "success",
+  "data": {
+    "track_index": 0,
+    "track_name": "Drums",
+    "index": 1,
+    "name": "Compressor",
+    "type": "AudioFX", // "Instrument" | "AudioFX" | "NoteFX" | "Unknown"
+    "is_bypassed": false,
+    "is_expanded": null,       // null if not exposed by API
+    "is_window_open": null,    // null if not exposed by API
+    "is_selected": true,
+    "remote_controls": [
+      {
+        "index": 0,
+        "exists": true,
+        "name": "Threshold",
+        "value": 0.52,
+        "raw_value": null,      // null if raw not available
+        "display_value": "-12.0 dB"
+      }
+      // ... up to 8 entries (0-7). Missing controls use: { "index": n, "exists": false, "name": null, "value": null, "raw_value": null, "display_value": null }
+    ],
+    "remote_control_pages": [
+      {
+        "index": 0,
+        "exists": true,
+        "name": "Main",
+        "is_selected": true
+      }
+      // ... up to 8 entries (0-7). Missing pages use: { "index": n, "exists": false, "name": null, "is_selected": null }
+    ]
+  }
+}
+```
+
+- Notes:
+  - `remote_controls` reflect the currently selected remote control page for the device (via `device.remoteControls()`).
+  - `exists` for controls is `true` when the parameter name is non-empty; otherwise `false` (defined heuristic).
+  - `value` is normalized (0.0-1.0). `raw_value` is provided only if the Controller API exposes a raw accessor; otherwise `null`.
+  - `remote_control_pages` come from `device.remoteControls().pageBank()`; `is_selected` is derived from the page's selection state. Exactly one page should be selected.
+  - If fewer than 8 controls/pages are present, remaining slots are filled with `exists=false` and nullable fields set to `null`.
+
+- Errors:
+  - `INVALID_PARAMETER`
+  - `INVALID_RANGE`
+  - `TRACK_NOT_FOUND`
+  - `DEVICE_NOT_FOUND`
+  - `DEVICE_NOT_SELECTED`
+  - `BITWIG_API_ERROR`
+
 ### Error Handling
 
-Errors will be communicated in the `status` field of the response, with additional details in the `message` field. Standard error codes may be introduced later.
+All MCP tools use a standardized response envelope.
+
+- Success:
+```json
+{
+  "status": "success",
+  "data": { }
+}
+```
+
+- Error:
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "INVALID_PARAMETER",
+    "message": "Human-readable error message",
+    "operation": "tool_name"
+  }
+}
+```
+
+- error.code is one of the values defined in the ErrorCode enum.
+- error.operation identifies the tool/operation that failed.
 
 ## External APIs Consumed
 
