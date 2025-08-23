@@ -484,6 +484,133 @@ public class BitwigApiFacade {
     }
 
     /**
+     * Gets detailed clip slot information for a specific track and scene index.
+     *
+     * @param trackIndex The 0-based track index
+     * @param trackName The name of the track
+     * @param sceneIndex The 0-based scene index
+     * @return Map containing detailed clip slot information
+     */
+    public Map<String, Object> getClipSlotDetails(int trackIndex, String trackName, int sceneIndex) {
+        logger.info("BitwigApiFacade: Getting clip slot details for track " + trackIndex + " (" + trackName + ") at scene " + sceneIndex);
+        
+        Map<String, Object> slotInfo = new LinkedHashMap<>();
+        
+        try {
+            // Get the track
+            Track track = trackBank.getItemAt(trackIndex);
+            if (!track.exists().get()) {
+                return null; // Track doesn't exist
+            }
+
+            // Basic track information
+            slotInfo.put("track_index", trackIndex);
+            slotInfo.put("track_name", trackName);
+
+            // Get the clip launcher slot at the scene index
+            ClipLauncherSlotBank slotBank = track.clipLauncherSlotBank();
+            if (sceneIndex >= slotBank.getSizeOfBank()) {
+                // Scene index is beyond the available slots for this track
+                return null;
+            }
+
+            ClipLauncherSlot slot = slotBank.getItemAt(sceneIndex);
+            
+            // Check if slot has content
+            boolean hasContent = false;
+            try { 
+                hasContent = slot.hasContent().get(); 
+            } catch (Exception e) { 
+                logger.warn("BitwigApiFacade: Error reading hasContent for slot: " + e.getMessage());
+            }
+            slotInfo.put("has_content", hasContent);
+
+            // Clip name (only if has content)
+            String clipName = null;
+            if (hasContent) {
+                try {
+                    clipName = slot.name().get();
+                    if (clipName != null && clipName.trim().isEmpty()) {
+                        clipName = null;
+                    }
+                } catch (Exception e) {
+                    logger.warn("BitwigApiFacade: Error reading clip name: " + e.getMessage());
+                }
+            }
+            slotInfo.put("clip_name", clipName);
+
+            // Clip color (only if has content)
+            String clipColor = null;
+            if (hasContent) {
+                try {
+                    Color color = slot.color().get();
+                    if (color != null) {
+                        clipColor = String.format("#%02X%02X%02X",
+                            (int) (color.getRed() * 255),
+                            (int) (color.getGreen() * 255),
+                            (int) (color.getBlue() * 255));
+                    }
+                } catch (Exception e) {
+                    logger.warn("BitwigApiFacade: Error reading clip color: " + e.getMessage());
+                }
+            }
+            slotInfo.put("clip_color", clipColor);
+
+            // Playback state flags (always present)
+            try {
+                slotInfo.put("is_playing", slot.isPlaying().get());
+            } catch (Exception e) {
+                slotInfo.put("is_playing", false);
+                logger.warn("BitwigApiFacade: Error reading is_playing: " + e.getMessage());
+            }
+
+            try {
+                slotInfo.put("is_recording", slot.isRecording().get());
+            } catch (Exception e) {
+                slotInfo.put("is_recording", false);
+                logger.warn("BitwigApiFacade: Error reading is_recording: " + e.getMessage());
+            }
+
+            try {
+                slotInfo.put("is_playback_queued", slot.isPlaybackQueued().get());
+            } catch (Exception e) {
+                slotInfo.put("is_playback_queued", false);
+                logger.warn("BitwigApiFacade: Error reading is_playback_queued: " + e.getMessage());
+            }
+
+            try {
+                slotInfo.put("is_recording_queued", slot.isRecordingQueued().get());
+            } catch (Exception e) {
+                slotInfo.put("is_recording_queued", false);
+                logger.warn("BitwigApiFacade: Error reading is_recording_queued: " + e.getMessage());
+            }
+
+            try {
+                slotInfo.put("is_stop_queued", slot.isStopQueued().get());
+            } catch (Exception e) {
+                slotInfo.put("is_stop_queued", false);
+                logger.warn("BitwigApiFacade: Error reading is_stop_queued: " + e.getMessage());
+            }
+
+        } catch (Exception e) {
+            logger.warn("BitwigApiFacade: Error getting clip slot details: " + e.getMessage());
+            // Return basic structure with safe defaults
+            slotInfo.put("track_index", trackIndex);
+            slotInfo.put("track_name", trackName);
+            slotInfo.put("has_content", false);
+            slotInfo.put("clip_name", null);
+            slotInfo.put("clip_color", null);
+            slotInfo.put("is_playing", false);
+            slotInfo.put("is_recording", false);
+            slotInfo.put("is_playback_queued", false);
+            slotInfo.put("is_recording_queued", false);
+            slotInfo.put("is_stop_queued", false);
+        }
+
+        return slotInfo;
+    }
+
+    /**
      * Gets the current project name.
      *
      * @return The project name or "Unknown Project" if not available

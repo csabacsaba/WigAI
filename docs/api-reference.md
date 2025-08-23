@@ -572,6 +572,90 @@ Communication is message-based, typically using JSON-RPC or a similar structured
 *   **Errors**:
     *   `BITWIG_API_ERROR`: Internal error occurred while retrieving scenes or Bitwig API unavailable
 
+#### `get_clips_in_scene`
+*   **Description**: Get detailed information for all clips within a specific scene, including their track context, content properties (name, color, length, loop status), and playback states.
+*   **Parameters**: One of `scene_index` or `scene_name` must be provided. If both are provided, `scene_name` takes precedence.
+    *   `scene_index` (integer, optional): 0-based index of the scene. Must be >= 0.
+    *   `scene_name` (string, optional): Name of the scene (case-insensitive, trimmed).
+*   **JSON Schema**:
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "scene_index": {
+          "type": "integer",
+          "description": "0-based index of the scene. Must be >= 0.",
+          "minimum": 0
+        },
+        "scene_name": {
+          "type": "string",
+          "description": "Name of the scene (case-insensitive, trimmed)"
+        }
+      },
+      "oneOf": [
+        {"required": ["scene_index"]},
+        {"required": ["scene_name"]},
+        {"required": ["scene_index", "scene_name"]}
+      ]
+    }
+    ```
+*   **Returns**:
+    ```json
+    {
+      "status": "success",
+      "data": [
+        {
+          "track_index": 0,
+          "track_name": "Bass",
+          "has_content": true,
+          "clip_name": "Bass Line",
+          "clip_color": "#FF8000",
+          "is_playing": false,
+          "is_recording": false,
+          "is_playback_queued": true,
+          "is_recording_queued": false,
+          "is_stop_queued": false
+        },
+        {
+          "track_index": 1,
+          "track_name": "Drums",
+          "has_content": false,
+          "clip_name": null,
+          "clip_color": null,
+          "is_playing": false,
+          "is_recording": false,
+          "is_playback_queued": false,
+          "is_recording_queued": false,
+          "is_stop_queued": false
+        }
+      ]
+    }
+    ```
+*   **Notes**:
+    - Returns an array of clip slot objects for all tracks at the specified scene index
+    - `track_index`: 0-based index of the track this slot belongs to
+    - `track_name`: Name of the track this slot belongs to
+    - `has_content`: True if a clip exists in this slot
+    - `clip_name`: Name of the clip if `has_content` is true; otherwise null
+    - `clip_color`: Hex color in "#RRGGBB" format if `has_content` is true; otherwise null
+    - `is_playing`: True if the clip in this slot is currently playing
+    - `is_recording`: True if the clip in this slot is currently recording
+    - `is_playback_queued`: True if playback is queued for the clip in this slot
+    - `is_recording_queued`: True if recording is queued for the clip in this slot
+    - `is_stop_queued`: True if a stop is queued for the clip in this slot
+    - Scene name comparison is case-insensitive and trimmed
+    - If multiple scenes share the same name, the first match by index is used
+    - Values reflect a consistent snapshot at query time (single API tick)
+*   **Validation Rules**:
+    - At least one of `scene_index` or `scene_name` must be provided
+    - `scene_index` must be >= 0 if provided
+    - Invalid `scene_index` (negative or out of range) results in `INVALID_PARAMETER` error
+*   **Errors**:
+    *   `SCENE_NOT_FOUND`: Scene not found by index or name
+    *   `INVALID_PARAMETER`: Invalid parameter value (e.g., negative scene_index)
+    *   `MISSING_REQUIRED_PARAMETER`: Neither scene_index nor scene_name provided
+    *   `BITWIG_API_ERROR`: Internal error occurred while retrieving clip information
+
 ### Device Information Commands
 
 #### `get_device_details`

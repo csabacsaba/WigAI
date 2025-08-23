@@ -23,7 +23,7 @@ public class SceneBankFacade {
         this.logger = logger;
         this.sceneCount = sceneCount;
         this.sceneBank = host.createSceneBank(sceneCount);
-        
+
         for (int i = 0; i < sceneCount; i++) {
             Scene scene = sceneBank.getItemAt(i);
             scene.name().markInterested();
@@ -78,7 +78,7 @@ public class SceneBankFacade {
 
                 Map<String, Object> sceneInfo = new LinkedHashMap<>();
                 sceneInfo.put("index", i);
-                
+
                 String sceneName = scene.name().get();
                 sceneInfo.put("name", sceneName);
 
@@ -108,12 +108,12 @@ public class SceneBankFacade {
             if (color == null) {
                 return null;
             }
-            
+
             // Get color values with fallback to default gray if API calls fail
             double red = 0.5;   // Default gray
             double green = 0.5;
             double blue = 0.5;
-            
+
             try {
                 red = color.getRed();
                 green = color.getGreen();
@@ -122,7 +122,7 @@ public class SceneBankFacade {
                 // Use defaults if color API calls fail
                 logger.info("SceneBankFacade: Using default color values due to API access issue");
             }
-            
+
             return String.format("rgb(%d,%d,%d)",
                 (int) (red * 255),
                 (int) (green * 255),

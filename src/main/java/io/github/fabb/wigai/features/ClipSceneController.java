@@ -5,6 +5,11 @@ import io.github.fabb.wigai.common.Logger;
 import io.github.fabb.wigai.common.error.BitwigApiException;
 import io.github.fabb.wigai.common.error.ErrorCode;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Controller for clip and scene launching operations in Bitwig Studio.
  * Handles the business logic for session control including clip launching,
@@ -112,6 +117,131 @@ public class ClipSceneController {
 
     public BitwigApiFacade getBitwigApiFacade() {
         return bitwigApiFacade;
+    }
+
+    /**
+     * Gets detailed information for all clips within a specific scene.
+     *
+     * @param sceneIndex The zero-based index of the scene (optional if sceneName provided)
+     * @param sceneName The name of the scene (optional if sceneIndex provided)
+     * @return List of clip slot objects for the specified scene
+     */
+    public Object getClipsInScene(Integer sceneIndex, String sceneName) {
+        try {
+            logger.info("Getting clips in scene - Index: " + sceneIndex + ", Name: '" + sceneName + "'");
+
+            // Determine target scene index
+            int targetSceneIndex;
+            if (sceneName != null && !sceneName.trim().isEmpty()) {
+                // Scene name takes precedence - case-insensitive comparison
+                String normalizedName = sceneName.trim();
+                targetSceneIndex = findSceneByNameCaseInsensitive(normalizedName);
+                if (targetSceneIndex < 0) {
+                    throw new BitwigApiException(
+                        ErrorCode.SCENE_NOT_FOUND,
+                        "get_clips_in_scene",
+                        "Scene not found: " + sceneName,
+                        Map.of("scene_name", sceneName)
+                    );
+                }
+                logger.info("Found scene '" + sceneName + "' at index " + targetSceneIndex);
+            } else if (sceneIndex != null) {
+                targetSceneIndex = sceneIndex;
+                // Validate scene index exists by checking if any track has clips at this index
+                if (!isSceneIndexValid(targetSceneIndex)) {
+                    throw new BitwigApiException(
+                        ErrorCode.SCENE_NOT_FOUND,
+                        "get_clips_in_scene", 
+                        "Scene not found: " + targetSceneIndex,
+                        Map.of("scene_index", targetSceneIndex)
+                    );
+                }
+                logger.info("Using scene index " + targetSceneIndex);
+            } else {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_PARAMETER,
+                    "get_clips_in_scene",
+                    "At least one of scene_index or scene_name must be provided",
+                    Map.of()
+                );
+            }
+
+            // Get clips from all tracks at the target scene index
+            List<Map<String, Object>> clipSlots = new ArrayList<>();
+            int trackCount = bitwigApiFacade.getTrackBankSize();
+            
+            for (int trackIndex = 0; trackIndex < trackCount; trackIndex++) {
+                try {
+                    String trackName = bitwigApiFacade.getTrackNameByIndex(trackIndex);
+                    if (trackName == null || trackName.trim().isEmpty()) {
+                        continue; // Skip tracks that don't exist
+                    }
+
+                    Map<String, Object> clipSlot = bitwigApiFacade.getClipSlotDetails(trackIndex, trackName, targetSceneIndex);
+                    if (clipSlot != null) {
+                        clipSlots.add(clipSlot);
+                    } else {
+                        // Create default empty slot entry for tracks that don't have this scene index
+                        Map<String, Object> emptySlot = new LinkedHashMap<>();
+                        emptySlot.put("track_index", trackIndex);
+                        emptySlot.put("track_name", trackName);
+                        emptySlot.put("has_content", false);
+                        emptySlot.put("clip_name", null);
+                        emptySlot.put("clip_color", null);
+                        emptySlot.put("is_playing", false);
+                        emptySlot.put("is_recording", false);
+                        emptySlot.put("is_playback_queued", false);
+                        emptySlot.put("is_recording_queued", false);
+                        emptySlot.put("is_stop_queued", false);
+                        clipSlots.add(emptySlot);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error getting clip info for track " + trackIndex + " at scene " + targetSceneIndex + ": " + e.getMessage());
+                    // Continue with next track
+                }
+            }
+
+            logger.info("Retrieved " + clipSlots.size() + " clip slots for scene " + targetSceneIndex);
+            return clipSlots;
+
+        } catch (BitwigApiException e) {
+            logger.error("Failed to get clips in scene: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error getting clips in scene: " + e.getMessage(), e);
+            throw new BitwigApiException(
+                ErrorCode.INTERNAL_ERROR,
+                "get_clips_in_scene",
+                "Internal error occurred while getting clips in scene: " + e.getMessage(),
+                Map.of()
+            );
+        }
+    }
+
+    /**
+     * Finds a scene by name using case-insensitive comparison.
+     * Returns the first matching scene index, or -1 if not found.
+     */
+    private int findSceneByNameCaseInsensitive(String sceneName) {
+        int sceneCount = bitwigApiFacade.getSceneCount();
+        for (int i = 0; i < sceneCount; i++) {
+            String currentSceneName = bitwigApiFacade.getSceneName(i);
+            if (currentSceneName != null && currentSceneName.trim().equalsIgnoreCase(sceneName)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Validates that a scene index is valid by checking if the scene bank contains it.
+     */
+    private boolean isSceneIndexValid(int sceneIndex) {
+        if (sceneIndex < 0) {
+            return false;
+        }
+        int sceneCount = bitwigApiFacade.getSceneCount();
+        return sceneIndex < sceneCount;
     }
 
     /**
