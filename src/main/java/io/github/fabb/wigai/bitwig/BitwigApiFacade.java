@@ -493,9 +493,9 @@ public class BitwigApiFacade {
      */
     public Map<String, Object> getClipSlotDetails(int trackIndex, String trackName, int sceneIndex) {
         logger.info("BitwigApiFacade: Getting clip slot details for track " + trackIndex + " (" + trackName + ") at scene " + sceneIndex);
-        
+
         Map<String, Object> slotInfo = new LinkedHashMap<>();
-        
+
         try {
             // Get the track
             Track track = trackBank.getItemAt(trackIndex);
@@ -515,12 +515,12 @@ public class BitwigApiFacade {
             }
 
             ClipLauncherSlot slot = slotBank.getItemAt(sceneIndex);
-            
+
             // Check if slot has content
             boolean hasContent = false;
-            try { 
-                hasContent = slot.hasContent().get(); 
-            } catch (Exception e) { 
+            try {
+                hasContent = slot.hasContent().get();
+            } catch (Exception e) {
                 logger.warn("BitwigApiFacade: Error reading hasContent for slot: " + e.getMessage());
             }
             slotInfo.put("has_content", hasContent);
@@ -1296,6 +1296,199 @@ public class BitwigApiFacade {
         } catch (Exception e) {
             logger.warn("BitwigApiFacade: Error formatting track color: " + e.getMessage());
             return "rgb(128,128,128)"; // Default gray fallback
+        }
+    }
+
+    /**
+     * Gets detailed device information for a specific track identified by index, name, or selected track.
+     *
+     * @param trackIndex The 0-based track index (optional)
+     * @param trackName The exact track name (optional)
+     * @param getSelected Whether to get devices for the selected track (optional)
+     * @return List of device summary objects with detailed information
+     * @throws BitwigApiException if the track is not found or API access fails
+     */
+    public List<Map<String, Object>> getDevicesOnTrack(Integer trackIndex, String trackName, Boolean getSelected) 
+            throws BitwigApiException {
+        final String operation = "getDevicesOnTrack";
+        
+        try {
+            Track targetTrack = null;
+            int resolvedTrackIndex = -1;
+
+            // Resolve target track based on parameters
+            if (trackIndex != null) {
+                // Track by index
+                if (trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
+                    throw new BitwigApiException(ErrorCode.INVALID_RANGE, operation, 
+                        "Track index " + trackIndex + " is out of range [0, " + (trackBank.getSizeOfBank() - 1) + "]");
+                }
+                
+                targetTrack = trackBank.getItemAt(trackIndex);
+                if (!targetTrack.exists().get()) {
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                        "Track at index " + trackIndex + " does not exist");
+                }
+                resolvedTrackIndex = trackIndex;
+                
+            } else if (trackName != null) {
+                // Track by name - find exact match
+                for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+                    Track track = trackBank.getItemAt(i);
+                    if (track.exists().get() && trackName.equals(track.name().get())) {
+                        targetTrack = track;
+                        resolvedTrackIndex = i;
+                        break;
+                    }
+                }
+                
+                if (targetTrack == null) {
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                        "No track found with name '" + trackName + "'");
+                }
+                
+            } else if (Boolean.TRUE.equals(getSelected)) {
+                // Use selected track (cursor track)
+                if (!cursorTrack.exists().get()) {
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                        "No track is currently selected");
+                }
+                
+                // Find the index of the cursor track in the track bank
+                String selectedTrackName = cursorTrack.name().get();
+                for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+                    Track track = trackBank.getItemAt(i);
+                    if (track.exists().get() && selectedTrackName.equals(track.name().get())) {
+                        targetTrack = track;
+                        resolvedTrackIndex = i;
+                        break;
+                    }
+                }
+                
+                if (targetTrack == null) {
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                        "Selected track not found in track bank");
+                }
+            }
+
+            if (targetTrack == null) {
+                throw new BitwigApiException(ErrorCode.INVALID_PARAMETER, operation, 
+                    "No valid track identifier provided");
+            }
+
+            // Get devices for the resolved track
+            return getDetailedTrackDevices(resolvedTrackIndex, targetTrack);
+            
+        } catch (BitwigApiException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("BitwigApiFacade: Unexpected error in " + operation + ": " + e.getMessage());
+            throw new BitwigApiException(ErrorCode.BITWIG_API_ERROR, operation, 
+                "Failed to get devices for track: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gets detailed device information for a specific track with enhanced device details.
+     *
+     * @param trackIndex The resolved track index
+     * @param track The target track object
+     * @return List of detailed device information maps
+     */
+    private List<Map<String, Object>> getDetailedTrackDevices(int trackIndex, Track track) {
+        List<Map<String, Object>> devices = new ArrayList<>();
+
+        try {
+            // Use the pre-existing device bank for this track
+            if (trackIndex < 0 || trackIndex >= trackDeviceBanks.size()) {
+                logger.warn("BitwigApiFacade: Invalid track index for devices: " + trackIndex);
+                return devices;
+            }
+
+            DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
+            
+            // Determine if this track is the currently selected track
+            boolean isSelectedTrack = cursorTrack.exists().get() && 
+                track.name().get().equals(cursorTrack.name().get());
+            
+            // Get cursor device info for selection comparison
+            String selectedDeviceName = null;
+            boolean hasCursorDevice = cursorDevice.exists().get();
+            if (hasCursorDevice && isSelectedTrack) {
+                selectedDeviceName = cursorDevice.name().get();
+            }
+
+            // Iterate through device bank with proper enumeration
+            for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
+                Device device = deviceBank.getItemAt(i);
+
+                // Check if device exists
+                if (!device.exists().get()) {
+                    continue;
+                }
+
+                Map<String, Object> deviceInfo = new LinkedHashMap<>();
+                deviceInfo.put("index", i);
+
+                // Get device name
+                String deviceName = device.name().get();
+                deviceInfo.put("name", deviceName);
+
+                // Get and map device type
+                String rawDeviceType = device.deviceType().get();
+                String mappedType = mapDeviceType(rawDeviceType);
+                deviceInfo.put("type", mappedType);
+
+                // Get device bypassed status (bypassed = !enabled)
+                boolean isEnabled = device.isEnabled().get();
+                deviceInfo.put("bypassed", !isEnabled);
+
+                // Determine if this device is selected
+                boolean isDeviceSelected = false;
+                if (isSelectedTrack && hasCursorDevice && selectedDeviceName != null) {
+                    // Prefer index-based comparison if available, otherwise use name matching
+                    isDeviceSelected = deviceName.equals(selectedDeviceName);
+                }
+                deviceInfo.put("is_selected", isDeviceSelected);
+
+                // Optional UI state fields - only include if available
+                // Per story requirements, omit these fields if not available from API
+                // deviceInfo.put("is_expanded", null);  // Omitted - not available from Controller API
+                // deviceInfo.put("is_window_open", null);  // Omitted - not available from Controller API
+
+                devices.add(deviceInfo);
+            }
+
+            logger.info("BitwigApiFacade: Found " + devices.size() + " devices on track: " + track.name().get());
+
+        } catch (Exception e) {
+            logger.warn("BitwigApiFacade: Error getting detailed devices for track index " + trackIndex + ": " + e.getMessage());
+        }
+
+        return devices;
+    }
+
+    /**
+     * Maps Bitwig device types to standardized type names.
+     *
+     * @param rawDeviceType The raw device type from Bitwig API
+     * @return Mapped device type: "Instrument", "AudioFX", "NoteFX", or "Unknown"
+     */
+    private String mapDeviceType(String rawDeviceType) {
+        if (rawDeviceType == null) {
+            return "Unknown";
+        }
+        
+        String lowerType = rawDeviceType.toLowerCase();
+        
+        if (lowerType.contains("instrument")) {
+            return "Instrument";
+        } else if (lowerType.contains("note") || lowerType.contains("midi")) {
+            return "NoteFX";
+        } else if (lowerType.contains("audio") || lowerType.contains("effect") || lowerType.contains("fx")) {
+            return "AudioFX";
+        } else {
+            return "Unknown";
         }
     }
 }

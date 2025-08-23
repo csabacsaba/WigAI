@@ -77,7 +77,7 @@ class GetClipsInSceneToolTest {
     void testGetClipsInScene_SceneNotFound() throws Exception {
         // Arrange: Mock scene not found error
         when(clipSceneController.getClipsInScene(999, null))
-            .thenThrow(new BitwigApiException(ErrorCode.SCENE_NOT_FOUND, "get_clips_in_scene", 
+            .thenThrow(new BitwigApiException(ErrorCode.SCENE_NOT_FOUND, "get_clips_in_scene",
                 "Scene not found: 999", Map.of("scene_index", 999)));
 
         // Act & Assert: Test that the specification is properly configured to handle errors
@@ -90,7 +90,7 @@ class GetClipsInSceneToolTest {
     void testGetClipsInScene_SceneNameNotFound() throws Exception {
         // Arrange: Mock scene name not found error
         when(clipSceneController.getClipsInScene(null, "NonExistentScene"))
-            .thenThrow(new BitwigApiException(ErrorCode.SCENE_NOT_FOUND, "get_clips_in_scene", 
+            .thenThrow(new BitwigApiException(ErrorCode.SCENE_NOT_FOUND, "get_clips_in_scene",
                 "Scene not found: NonExistentScene", Map.of("scene_name", "NonExistentScene")));
 
         // Act & Assert: Test that the specification is properly configured to handle errors
@@ -149,7 +149,7 @@ class GetClipsInSceneToolTest {
 
         var schema = spec.tool().inputSchema();
         assertNotNull(schema);
-        
+
         // Basic schema validation - checking that it's properly configured
         // Just verify the schema is present and tool is properly named
         assertEquals("get_clips_in_scene", spec.tool().name());
@@ -168,9 +168,9 @@ class GetClipsInSceneToolTest {
         );
     }
 
-    private Map<String, Object> createClipSlot(int trackIndex, String trackName, boolean hasContent, 
+    private Map<String, Object> createClipSlot(int trackIndex, String trackName, boolean hasContent,
                                              String clipName, String clipColor, boolean isPlaying, boolean isRecording,
-                                             boolean isPlaybackQueued, boolean isRecordingQueued, 
+                                             boolean isPlaybackQueued, boolean isRecordingQueued,
                                              boolean isStopQueued) {
         Map<String, Object> slot = new LinkedHashMap<>();
         slot.put("track_index", trackIndex);

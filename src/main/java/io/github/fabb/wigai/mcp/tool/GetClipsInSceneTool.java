@@ -63,7 +63,7 @@ public class GetClipsInSceneTool {
                     // Validate that at least one parameter is provided
                     Object sceneIndexObj = arguments.get("scene_index");
                     String sceneName = (String) arguments.get("scene_name");
-                    
+
                     if (sceneIndexObj == null && (sceneName == null || sceneName.trim().isEmpty())) {
                         throw new io.github.fabb.wigai.common.error.BitwigApiException(
                             io.github.fabb.wigai.common.error.ErrorCode.MISSING_REQUIRED_PARAMETER,
@@ -108,7 +108,7 @@ public class GetClipsInSceneTool {
                     return new GetClipsInSceneArguments(sceneIndex, sceneName);
                 },
                 (validatedArgs) -> clipSceneController.getClipsInScene(
-                    validatedArgs.sceneIndex(), 
+                    validatedArgs.sceneIndex(),
                     validatedArgs.sceneName()
                 )
             );

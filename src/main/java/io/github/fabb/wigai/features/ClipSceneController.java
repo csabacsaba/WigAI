@@ -151,7 +151,7 @@ public class ClipSceneController {
                 if (!isSceneIndexValid(targetSceneIndex)) {
                     throw new BitwigApiException(
                         ErrorCode.SCENE_NOT_FOUND,
-                        "get_clips_in_scene", 
+                        "get_clips_in_scene",
                         "Scene not found: " + targetSceneIndex,
                         Map.of("scene_index", targetSceneIndex)
                     );
@@ -169,7 +169,7 @@ public class ClipSceneController {
             // Get clips from all tracks at the target scene index
             List<Map<String, Object>> clipSlots = new ArrayList<>();
             int trackCount = bitwigApiFacade.getTrackBankSize();
-            
+
             for (int trackIndex = 0; trackIndex < trackCount; trackIndex++) {
                 try {
                     String trackName = bitwigApiFacade.getTrackNameByIndex(trackIndex);

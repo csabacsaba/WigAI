@@ -18,6 +18,7 @@ import io.github.fabb.wigai.mcp.tool.DeviceParamTool;
 import io.github.fabb.wigai.mcp.tool.ClipTool;
 import io.github.fabb.wigai.mcp.tool.SceneTool;
 import io.github.fabb.wigai.mcp.tool.ListTracksTool;
+import io.github.fabb.wigai.mcp.tool.ListDevicesOnTrackTool;
 import io.github.fabb.wigai.mcp.tool.GetTrackDetailsTool;
 import io.github.fabb.wigai.mcp.tool.ListScenesTool;
 import io.github.fabb.wigai.mcp.tool.GetClipsInSceneTool;
@@ -146,6 +147,7 @@ public class McpServerManager {
                 DeviceParamTool.setSelectedDeviceParameterSpecification(deviceController, structuredLogger),
                 DeviceParamTool.setMultipleDeviceParametersSpecification(deviceController, structuredLogger),
                 ListTracksTool.specification(bitwigApiFacade, structuredLogger),
+                ListDevicesOnTrackTool.specification(bitwigApiFacade, structuredLogger),
                 GetTrackDetailsTool.specification(bitwigApiFacade, structuredLogger),
                 ListScenesTool.specification(bitwigApiFacade, structuredLogger),
                 GetClipsInSceneTool.getClipsInSceneSpecification(clipSceneController, structuredLogger)
