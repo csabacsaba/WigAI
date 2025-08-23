@@ -474,6 +474,16 @@ public class BitwigApiFacade {
     }
 
     /**
+     * Gets all scenes in the project with their details.
+     *
+     * @return A list of scene information maps containing index, name, and color
+     */
+    public List<Map<String, Object>> getAllScenesInfo() {
+        logger.info("BitwigApiFacade: Getting all scenes info");
+        return sceneBankFacade.getAllScenesInfo();
+    }
+
+    /**
      * Gets the current project name.
      *
      * @return The project name or "Unknown Project" if not available

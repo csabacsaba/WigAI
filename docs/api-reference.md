@@ -527,6 +527,51 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     *   `TRACK_NOT_FOUND`: Target track not found or no track selected when required
     *   `BITWIG_API_ERROR`: Internal Bitwig API error
 
+### Scene Information Commands
+
+#### `list_scenes`
+*   **Description**: List all scenes in the current project with their name and color. Returns information about scene structure.
+*   **Parameters**: None
+*   **JSON Schema**:
+    ```json
+    {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+    ```
+*   **Returns**:
+    ```json
+    {
+      "status": "success",
+      "data": [
+        {
+          "index": 0,
+          "name": "Intro",
+          "color": "rgb(255,128,0)"
+        },
+        {
+          "index": 1,
+          "name": "Verse",
+          "color": "rgb(0,180,255)"
+        },
+        {
+          "index": 2,
+          "name": "Chorus",
+          "color": null
+        }
+      ]
+    }
+    ```
+*   **Notes**:
+    - `index`: 0-based index of the scene across the entire project (not limited to the visible window)
+    - `name`: Name of the scene as displayed in Bitwig Studio
+    - `color`: Scene color as an RGB string formatted exactly as `rgb(r,g,b)` where `r`, `g`, and `b` are integers in the range 0–255. Use `null` if the color is not available from the API
+    - The tool queries the Bitwig API (SceneBank) to retrieve all scenes, correctly handling paged/scrolling access so that all scenes are returned, not just the currently visible window
+    - The tool functions correctly in an empty project (returns `[]`)
+*   **Errors**:
+    *   `BITWIG_API_ERROR`: Internal error occurred while retrieving scenes or Bitwig API unavailable
+
 ### Device Information Commands
 
 #### `get_device_details`
