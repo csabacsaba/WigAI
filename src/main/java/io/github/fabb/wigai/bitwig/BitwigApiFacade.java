@@ -13,12 +13,34 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Facade for Bitwig API interactions.
  * This class abstracts the Bitwig API and provides simplified methods for common operations.
  */
 public class BitwigApiFacade {
+
+    /**
+     * Constants used throughout the BitwigApiFacade.
+     */
+    private static final class Constants {
+        public static final String DEFAULT_PROJECT_NAME = "Unknown Project";
+        public static final String DEFAULT_BEAT_POSITION = "1.1.1:0";
+        public static final String DEFAULT_COLOR = "rgb(128,128,128)";
+        public static final String DEFAULT_TIME_STRING = "0:00.000";
+        public static final int MAX_TRACKS = 128;
+        public static final int MAX_SCENES = 128;
+        public static final int MAX_DEVICES_PER_TRACK = 128;
+        public static final int TICKS_PER_SIXTEENTH = 240;
+        public static final int BEATS_PER_MEASURE = 4;
+        public static final int SIXTEENTHS_PER_BEAT = 4;
+        public static final int DEVICE_PARAMETER_COUNT = 8;
+        public static final int PROJECT_PARAMETER_COUNT = 8;
+
+        private Constants() {} // Prevent instantiation
+    }
+
     private final ControllerHost host;
     private final Transport transport;
     private final Application application;
@@ -48,6 +70,7 @@ public class BitwigApiFacade {
         transport.isArrangerRecordEnabled().markInterested();
         transport.isArrangerLoopEnabled().markInterested();
         transport.isMetronomeEnabled().markInterested();
+        transport.tempo().markInterested();
         transport.tempo().value().markInterested();
         transport.timeSignature().markInterested();
         transport.getPosition().markInterested();
@@ -60,21 +83,21 @@ public class BitwigApiFacade {
         // Initialize device control - use CursorTrack.createCursorDevice() instead of deprecated host.createCursorDevice()
         this.cursorTrack = host.createCursorTrack(0, 0);
         this.cursorDevice = cursorTrack.createCursorDevice();
-        this.deviceParameterBank = cursorDevice.createCursorRemoteControlsPage(8);
+        this.deviceParameterBank = cursorDevice.createCursorRemoteControlsPage(Constants.DEVICE_PARAMETER_COUNT);
 
         // Initialize project parameter access via MasterTrack (project parameters)
         MasterTrack masterTrack = host.createMasterTrack(0);
-        this.projectParameterBank = masterTrack.createCursorRemoteControlsPage(8);
+        this.projectParameterBank = masterTrack.createCursorRemoteControlsPage(Constants.PROJECT_PARAMETER_COUNT);
 
         // Initialize track bank for clip launching (support up to 128 tracks and 128 scenes for full functionality)
-        this.trackBank = host.createTrackBank(128, 0, 128);
-        this.sceneBankFacade = new SceneBankFacade(host, logger, 128); // Support up to 128 scenes for full functionality
+        this.trackBank = host.createTrackBank(Constants.MAX_TRACKS, 0, Constants.MAX_SCENES);
+        this.sceneBankFacade = new SceneBankFacade(host, logger, Constants.MAX_SCENES); // Support up to 128 scenes for full functionality
 
         // Initialize device banks for each track to enable device enumeration
         this.trackDeviceBanks = new ArrayList<>();
         for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
             Track track = trackBank.getItemAt(i);
-            DeviceBank deviceBank = track.createDeviceBank(128);
+            DeviceBank deviceBank = track.createDeviceBank(Constants.MAX_DEVICES_PER_TRACK);
             trackDeviceBanks.add(deviceBank);
         }
 
@@ -111,6 +134,12 @@ public class BitwigApiFacade {
         cursorTrack.solo().markInterested();
         cursorTrack.arm().markInterested();
         cursorTrack.position().markInterested();
+        cursorTrack.isMonitoring().markInterested();
+        cursorTrack.monitorMode().markInterested();
+        cursorTrack.volume().value().markInterested();
+        cursorTrack.volume().displayedValue().markInterested();
+        cursorTrack.pan().value().markInterested();
+        cursorTrack.pan().displayedValue().markInterested();
 
         // Mark interest in track properties for clip launching and track listing
         for (int trackIndex = 0; trackIndex < trackBank.getSizeOfBank(); trackIndex++) {
@@ -143,6 +172,23 @@ public class BitwigApiFacade {
             track.isMonitoring().markInterested();
             track.monitorMode().markInterested();
 
+            // Mark interest in send properties - only if send bank exists and has sends
+            try {
+                SendBank sendBank = track.sendBank();
+                int sendBankSize = sendBank.getSizeOfBank();
+                if (sendBankSize > 0) {
+                    for (int sendIndex = 0; sendIndex < sendBankSize; sendIndex++) {
+                        Send send = sendBank.getItemAt(sendIndex);
+                        send.name().markInterested();
+                        send.value().markInterested();
+                        send.displayedValue().markInterested();
+                        send.isEnabled().markInterested();
+                    }
+                }
+            } catch (Exception e) {
+                // Some tracks may not have send banks (e.g., master track)
+            }
+
             ClipLauncherSlotBank trackSlots = track.clipLauncherSlotBank();
             for (int slotIndex = 0; slotIndex < trackSlots.getSizeOfBank(); slotIndex++) {
                 ClipLauncherSlot slot = trackSlots.getItemAt(slotIndex);
@@ -150,11 +196,76 @@ public class BitwigApiFacade {
                 slot.isPlaying().markInterested();
                 slot.isRecording().markInterested();
                 slot.isPlaybackQueued().markInterested();
+                slot.isRecordingQueued().markInterested();
+                slot.isStopQueued().markInterested();
                 slot.color().markInterested();
                 slot.name().markInterested();
             }
         }
     }
+
+    // ========================================
+    // Helper Methods
+    // ========================================
+
+    /**
+     * Finds a track by name using case-sensitive matching.
+     *
+     * @param trackName The name of the track to find
+     * @return Optional containing the track if found, empty otherwise
+     */
+    private Optional<Track> findTrackByName(String trackName) {
+        if (trackName == null || trackName.trim().isEmpty()) {
+            return Optional.empty();
+        }
+
+        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+            Track track = trackBank.getItemAt(i);
+            if (track.exists().get() && trackName.equals(track.name().get())) {
+                return Optional.of(track);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Finds a track by index.
+     *
+     * @param index The index of the track to find
+     * @return Optional containing the track if found and exists, empty otherwise
+     */
+    private Optional<Track> findTrackByIndex(int index) {
+        if (index < 0 || index >= trackBank.getSizeOfBank()) {
+            return Optional.empty();
+        }
+
+        Track track = trackBank.getItemAt(index);
+        return track.exists().get() ? Optional.of(track) : Optional.empty();
+    }
+
+    /**
+     * Gets the index of a track by name.
+     *
+     * @param trackName The name of the track
+     * @return The track index, or -1 if not found
+     */
+    private int getTrackIndexByName(String trackName) {
+        if (trackName == null || trackName.trim().isEmpty()) {
+            return -1;
+        }
+
+        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+            Track track = trackBank.getItemAt(i);
+            if (track.exists().get() && trackName.equals(track.name().get())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // ========================================
+    // Public API Methods
+    // ========================================
 
     /**
      * Returns the number of tracks in the track bank.
@@ -343,23 +454,18 @@ public class BitwigApiFacade {
         return WigAIErrorHandler.executeWithErrorHandling(operation, () -> {
             ParameterValidator.validateNotEmpty(trackName, "trackName", operation);
 
-            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-                Track track = trackBank.getItemAt(i);
-                if (track.exists().get()) {
-                    String currentTrackName = track.name().get();
-                    if (trackName.equals(currentTrackName)) {
-                        logger.info("BitwigApiFacade: Found track '" + trackName + "' at index " + i);
-                        return i;
-                    }
-                }
+            int index = getTrackIndexByName(trackName);
+            if (index == -1) {
+                throw new BitwigApiException(
+                    ErrorCode.TRACK_NOT_FOUND,
+                    operation,
+                    "Track '" + trackName + "' not found",
+                    Map.of("trackName", trackName)
+                );
             }
 
-            throw new BitwigApiException(
-                ErrorCode.TRACK_NOT_FOUND,
-                operation,
-                "Track '" + trackName + "' not found",
-                Map.of("trackName", trackName)
-            );
+            logger.info("BitwigApiFacade: Found track '" + trackName + "' at index " + index);
+            return index;
         });
     }
 
@@ -387,12 +493,10 @@ public class BitwigApiFacade {
     public int getTrackClipCount(String trackName) {
         logger.info("BitwigApiFacade: Getting clip count for track '" + trackName + "'");
 
-        for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-            Track track = trackBank.getItemAt(i);
-            if (track.exists().get() && trackName.equals(track.name().get())) {
-                // Return the number of available clip launcher slots
-                return track.clipLauncherSlotBank().getSizeOfBank();
-            }
+        Optional<Track> trackOpt = findTrackByName(trackName);
+        if (trackOpt.isPresent()) {
+            // Return the number of available clip launcher slots
+            return trackOpt.get().clipLauncherSlotBank().getSizeOfBank();
         }
 
         logger.warn("BitwigApiFacade: Track '" + trackName + "' not found for clip count check");
@@ -415,17 +519,9 @@ public class BitwigApiFacade {
             ParameterValidator.validateNotEmpty(trackName, "trackName", operation);
             ParameterValidator.validateClipIndex(clipIndex, operation);
 
-            // Find the track
-            Track targetTrack = null;
-            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-                Track track = trackBank.getItemAt(i);
-                if (track.exists().get() && trackName.equals(track.name().get())) {
-                    targetTrack = track;
-                    break;
-                }
-            }
-
-            if (targetTrack == null) {
+            // Find the track using helper method
+            Optional<Track> trackOpt = findTrackByName(trackName);
+            if (trackOpt.isEmpty()) {
                 throw new BitwigApiException(
                     ErrorCode.TRACK_NOT_FOUND,
                     operation,
@@ -433,6 +529,8 @@ public class BitwigApiFacade {
                     Map.of("trackName", trackName)
                 );
             }
+
+            Track targetTrack = trackOpt.get();
 
             // Validate clip index within track bounds
             ClipLauncherSlotBank slotBank = targetTrack.clipLauncherSlotBank();
@@ -518,81 +616,37 @@ public class BitwigApiFacade {
 
             ClipLauncherSlot slot = slotBank.getItemAt(sceneIndex);
 
-            // Check if slot has content
-            boolean hasContent = false;
-            try {
-                hasContent = slot.hasContent().get();
-            } catch (Exception e) {
-                logger.warn("BitwigApiFacade: Error reading hasContent for slot: " + e.getMessage());
-            }
+            // Check if slot has content (marked as interested in constructor)
+            boolean hasContent = slot.hasContent().get();
             slotInfo.put("has_content", hasContent);
 
-            // Clip name (only if has content)
+            // Clip name (only if has content, marked as interested in constructor)
             String clipName = null;
             if (hasContent) {
-                try {
-                    clipName = slot.name().get();
-                    if (clipName != null && clipName.trim().isEmpty()) {
-                        clipName = null;
-                    }
-                } catch (Exception e) {
-                    logger.warn("BitwigApiFacade: Error reading clip name: " + e.getMessage());
-                }
+                String name = slot.name().get();
+                clipName = (name != null && name.trim().isEmpty()) ? null : name;
             }
             slotInfo.put("clip_name", clipName);
 
-            // Clip color (only if has content)
+            // Clip color (only if has content, marked as interested in constructor)
             String clipColor = null;
             if (hasContent) {
-                try {
-                    Color color = slot.color().get();
-                    if (color != null) {
-                        clipColor = String.format("#%02X%02X%02X",
-                            (int) (color.getRed() * 255),
-                            (int) (color.getGreen() * 255),
-                            (int) (color.getBlue() * 255));
-                    }
-                } catch (Exception e) {
-                    logger.warn("BitwigApiFacade: Error reading clip color: " + e.getMessage());
+                Color color = slot.color().get();
+                if (color != null) {
+                    clipColor = String.format("#%02X%02X%02X",
+                        (int) (color.getRed() * 255),
+                        (int) (color.getGreen() * 255),
+                        (int) (color.getBlue() * 255));
                 }
             }
             slotInfo.put("clip_color", clipColor);
 
-            // Playback state flags (always present)
-            try {
-                slotInfo.put("is_playing", slot.isPlaying().get());
-            } catch (Exception e) {
-                slotInfo.put("is_playing", false);
-                logger.warn("BitwigApiFacade: Error reading is_playing: " + e.getMessage());
-            }
-
-            try {
-                slotInfo.put("is_recording", slot.isRecording().get());
-            } catch (Exception e) {
-                slotInfo.put("is_recording", false);
-                logger.warn("BitwigApiFacade: Error reading is_recording: " + e.getMessage());
-            }
-
-            try {
-                slotInfo.put("is_playback_queued", slot.isPlaybackQueued().get());
-            } catch (Exception e) {
-                slotInfo.put("is_playback_queued", false);
-                logger.warn("BitwigApiFacade: Error reading is_playback_queued: " + e.getMessage());
-            }
-
-            try {
-                slotInfo.put("is_recording_queued", slot.isRecordingQueued().get());
-            } catch (Exception e) {
-                slotInfo.put("is_recording_queued", false);
-                logger.warn("BitwigApiFacade: Error reading is_recording_queued: " + e.getMessage());
-            }
-
-            try {
-                slotInfo.put("is_stop_queued", slot.isStopQueued().get());
-            } catch (Exception e) {
-                slotInfo.put("is_stop_queued", false);
-                logger.warn("BitwigApiFacade: Error reading is_stop_queued: " + e.getMessage());
-            }
+            // Playback state flags (all properties marked as interested in constructor)
+            slotInfo.put("is_playing", slot.isPlaying().get());
+            slotInfo.put("is_recording", slot.isRecording().get());
+            slotInfo.put("is_playback_queued", slot.isPlaybackQueued().get());
+            slotInfo.put("is_recording_queued", slot.isRecordingQueued().get());
+            slotInfo.put("is_stop_queued", slot.isStopQueued().get());
 
         } catch (Exception e) {
             logger.warn("BitwigApiFacade: Error getting clip slot details: " + e.getMessage());
@@ -619,13 +673,8 @@ public class BitwigApiFacade {
      */
     public String getProjectName() {
         logger.info("BitwigApiFacade: Getting project name");
-        try {
-            String projectName = application.projectName().get();
-            return projectName != null && !projectName.trim().isEmpty() ? projectName : "Unknown Project";
-        } catch (Exception e) {
-            logger.warn("BitwigApiFacade: Unable to get project name: " + e.getMessage());
-            return "Unknown Project";
-        }
+        String projectName = application.projectName().get();
+        return projectName != null && !projectName.trim().isEmpty() ? projectName : Constants.DEFAULT_PROJECT_NAME;
     }
 
     /**
@@ -635,12 +684,7 @@ public class BitwigApiFacade {
      */
     public boolean isAudioEngineActive() {
         logger.info("BitwigApiFacade: Checking audio engine status");
-        try {
-            return application.hasActiveEngine().get();
-        } catch (Exception e) {
-            logger.warn("BitwigApiFacade: Unable to get audio engine status: " + e.getMessage());
-            return false;
-        }
+        return application.hasActiveEngine().get();
     }
 
     /**
@@ -678,7 +722,7 @@ public class BitwigApiFacade {
                 return String.format("%d:%02d.%03d", minutes, secs, milliseconds);
             }
         } catch (Exception e) {
-            return "0:00.000";
+            return Constants.DEFAULT_TIME_STRING;
         }
     }
 
@@ -717,8 +761,8 @@ public class BitwigApiFacade {
             transportMap.put("metronome_active", false);
             transportMap.put("current_tempo", 120.0);
             transportMap.put("time_signature", "4/4");
-            transportMap.put("current_beat_str", "1.1.1:0");
-            transportMap.put("current_time_str", "0:00.000");
+            transportMap.put("current_beat_str", Constants.DEFAULT_BEAT_POSITION);
+            transportMap.put("current_time_str", Constants.DEFAULT_TIME_STRING);
         }
 
         return transportMap;
@@ -731,9 +775,9 @@ public class BitwigApiFacade {
     private String formatBitwigBeatPosition(double positionInBeats) {
         try {
             // Assume 4/4 time signature for calculation
-            int beatsPerMeasure = 4;
-            int sixteenthsPerBeat = 4;
-            int ticksPerSixteenth = 240; // Common MIDI resolution
+            int beatsPerMeasure = Constants.BEATS_PER_MEASURE;
+            int sixteenthsPerBeat = Constants.SIXTEENTHS_PER_BEAT;
+            int ticksPerSixteenth = Constants.TICKS_PER_SIXTEENTH; // Common MIDI resolution
 
             // Convert beats to total ticks
             int totalTicks = (int) Math.round(positionInBeats * sixteenthsPerBeat * ticksPerSixteenth);
@@ -753,7 +797,7 @@ public class BitwigApiFacade {
             return String.format("%d.%d.%d:%d", measures, beats, sixteenths, ticks);
         } catch (Exception e) {
             logger.warn("BitwigApiFacade: Error formatting beat position: " + e.getMessage());
-            return "1.1.1:0";
+            return Constants.DEFAULT_BEAT_POSITION;
         }
     }
 
@@ -805,16 +849,9 @@ public class BitwigApiFacade {
         Map<String, Object> trackInfo = new LinkedHashMap<>();
 
         try {
-            // Get track index by finding it in the track bank
-            int trackIndex = -1;
+            // Get track index by finding it in the track bank using helper method
             String trackName = cursorTrack.name().get();
-            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-                Track track = trackBank.getItemAt(i);
-                if (track.exists().get() && trackName.equals(track.name().get())) {
-                    trackIndex = i;
-                    break;
-                }
-            }
+            int trackIndex = getTrackIndexByName(trackName);
 
             trackInfo.put("index", trackIndex);
             trackInfo.put("name", trackName);
@@ -851,16 +888,7 @@ public class BitwigApiFacade {
         try {
             // Get track information where the device is located
             String trackName = cursorTrack.name().get();
-            int trackIndex = -1;
-
-            // Find track index in the track bank
-            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-                Track track = trackBank.getItemAt(i);
-                if (track.exists().get() && trackName.equals(track.name().get())) {
-                    trackIndex = i;
-                    break;
-                }
-            }
+            int trackIndex = getTrackIndexByName(trackName);
 
             deviceInfo.put("track_name", trackName);
             deviceInfo.put("track_index", trackIndex);
@@ -1135,7 +1163,7 @@ public class BitwigApiFacade {
                 info.put("is_group", cursorTrack.isGroup().get());
                 info.put("parent_group_index", null);
                 info.put("activated", true);
-                info.put("color", "rgb(128,128,128)");
+                info.put("color", Constants.DEFAULT_COLOR);
                 info.put("is_selected", true);
                 info.put("devices", List.of());
                 info.put("volume", cursorTrack.volume().value().get());
@@ -1146,11 +1174,8 @@ public class BitwigApiFacade {
                 info.put("soloed", cursorTrack.solo().get());
                 info.put("armed", cursorTrack.arm().get());
                 info.put("monitor_enabled", cursorTrack.isMonitoring().get());
-                boolean cursorAuto = false;
-                try {
-                    String mode = cursorTrack.monitorMode().get();
-                    cursorAuto = mode != null && mode.toLowerCase().contains("auto");
-                } catch (Exception ignored) {}
+                String mode = cursorTrack.monitorMode().get();
+                boolean cursorAuto = mode != null && mode.toLowerCase().contains("auto");
                 info.put("auto_monitor_enabled", cursorAuto);
                 info.put("sends", List.of());
                 info.put("clips", List.of());
@@ -1198,16 +1223,10 @@ public class BitwigApiFacade {
             trackInfo.put("muted", track.mute().get());
             trackInfo.put("soloed", track.solo().get());
             trackInfo.put("armed", track.arm().get());
-            // Monitoring
-            boolean monitoring = false;
-            boolean autoMon = false;
-            try {
-                monitoring = track.isMonitoring().get();
-                String mode = track.monitorMode().get();
-                autoMon = mode != null && mode.toLowerCase().contains("auto");
-            } catch (Exception e) {
-                // ignore
-            }
+            // Monitoring (properties marked as interested in constructor)
+            boolean monitoring = track.isMonitoring().get();
+            String mode = track.monitorMode().get();
+            boolean autoMon = mode != null && mode.toLowerCase().contains("auto");
             trackInfo.put("monitor_enabled", monitoring);
             trackInfo.put("auto_monitor_enabled", autoMon);
 
@@ -1218,13 +1237,6 @@ public class BitwigApiFacade {
                 int sendCount = sendBank.getSizeOfBank();
                 for (int i = 0; i < sendCount; i++) {
                     Send send = sendBank.getItemAt(i);
-                    // Mark interest defensively in case not marked
-                    try {
-                        send.name().markInterested();
-                        send.value().markInterested();
-                        send.displayedValue().markInterested();
-                        send.isEnabled().markInterested();
-                    } catch (Exception ignored) {}
                     Map<String, Object> sendMap = new LinkedHashMap<>();
                     sendMap.put("name", send.name().get());
                     sendMap.put("volume", send.value().get());
@@ -1297,7 +1309,7 @@ public class BitwigApiFacade {
 
         } catch (Exception e) {
             logger.warn("BitwigApiFacade: Error formatting track color: " + e.getMessage());
-            return "rgb(128,128,128)"; // Default gray fallback
+            return Constants.DEFAULT_COLOR; // Default gray fallback
         }
     }
 
@@ -1409,14 +1421,10 @@ public class BitwigApiFacade {
 
             DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
 
-            // Determine if this track is the currently selected track
-            boolean isSelectedTrack = cursorTrack.exists().get() &&
-                track.name().get().equals(cursorTrack.name().get());
-
-            // Get cursor device info for selection comparison
+            // Get cursor device info for selection comparison (only if we have a selected track and device)
             String selectedDeviceName = null;
-            boolean hasCursorDevice = cursorDevice.exists().get();
-            if (hasCursorDevice && isSelectedTrack) {
+            boolean isSelectedTrack = cursorTrack.exists().get() && track.name().get().equals(cursorTrack.name().get());
+            if (isSelectedTrack && cursorDevice.exists().get()) {
                 selectedDeviceName = cursorDevice.name().get();
             }
 
@@ -1447,8 +1455,8 @@ public class BitwigApiFacade {
 
                 // Determine if this device is selected
                 boolean isDeviceSelected = false;
-                if (isSelectedTrack && hasCursorDevice && selectedDeviceName != null) {
-                    // Prefer index-based comparison if available, otherwise use name matching
+                if (isSelectedTrack && selectedDeviceName != null) {
+                    // Use name matching for device selection comparison
                     isDeviceSelected = deviceName.equals(selectedDeviceName);
                 }
                 deviceInfo.put("is_selected", isDeviceSelected);
@@ -1593,33 +1601,32 @@ public class BitwigApiFacade {
         final String operation = "getTargetDeviceDetails";
 
         // Resolve target track
-        Track targetTrack = null;
-        int resolvedTrackIndex = -1;
+        Track targetTrack;
+        int resolvedTrackIndex;
 
         if (trackIndex != null) {
             if (trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
                 throw new BitwigApiException(ErrorCode.INVALID_RANGE, operation,
                     "Track index " + trackIndex + " is out of range [0, " + (trackBank.getSizeOfBank() - 1) + "]");
             }
-            targetTrack = trackBank.getItemAt(trackIndex);
-            if (!targetTrack.exists().get()) {
+            Optional<Track> trackOpt = findTrackByIndex(trackIndex);
+            if (trackOpt.isEmpty()) {
                 throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
                     "Track at index " + trackIndex + " does not exist");
             }
+            targetTrack = trackOpt.get();
             resolvedTrackIndex = trackIndex;
         } else if (trackName != null) {
-            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
-                Track track = trackBank.getItemAt(i);
-                if (track.exists().get() && trackName.equals(track.name().get())) {
-                    targetTrack = track;
-                    resolvedTrackIndex = i;
-                    break;
-                }
-            }
-            if (targetTrack == null) {
+            Optional<Track> trackOpt = findTrackByName(trackName);
+            if (trackOpt.isEmpty()) {
                 throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
                     "No track found with name '" + trackName + "'");
             }
+            targetTrack = trackOpt.get();
+            resolvedTrackIndex = getTrackIndexByName(trackName);
+        } else {
+            throw new BitwigApiException(ErrorCode.INVALID_PARAMETER, operation,
+                "Either trackIndex or trackName must be provided");
         }
 
         // Resolve target device
@@ -1651,6 +1658,9 @@ public class BitwigApiFacade {
                 throw new BitwigApiException(ErrorCode.DEVICE_NOT_FOUND, operation,
                     "No device found with name '" + deviceName + "' on track");
             }
+        } else {
+            throw new BitwigApiException(ErrorCode.INVALID_PARAMETER, operation,
+                "Either deviceIndex or deviceName must be provided");
         }
 
         // Get device basic properties

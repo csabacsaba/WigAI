@@ -1,6 +1,5 @@
 package io.github.fabb.wigai.bitwig;
 
-import com.bitwig.extension.api.Color;
 import com.bitwig.extension.controller.api.*;
 import io.github.fabb.wigai.common.Logger;
 import io.github.fabb.wigai.common.error.BitwigApiException;
@@ -75,6 +74,12 @@ public class BitwigApiFacadeTest {
     @Mock
     private Device mockDevice;
 
+    @Mock
+    private SendBank mockSendBank;
+
+    @Mock
+    private Send mockSend;
+
     private BitwigApiFacade bitwigApiFacade;
 
     @BeforeEach
@@ -99,6 +104,11 @@ public class BitwigApiFacadeTest {
         when(mockTrack.clipLauncherSlotBank()).thenReturn(mockClipLauncherSlotBank);
         when(mockClipLauncherSlotBank.getSizeOfBank()).thenReturn(8); // Reduced from 128 to 8 for testing
         when(mockClipLauncherSlotBank.getItemAt(anyInt())).thenReturn(mockClipLauncherSlot);
+
+        // Setup SendBank mocks
+        when(mockTrack.sendBank()).thenReturn(mockSendBank);
+        when(mockSendBank.getSizeOfBank()).thenReturn(8); // Default to 8 sends for testing
+        when(mockSendBank.getItemAt(anyInt())).thenReturn(mockSend);
 
         // Setup SceneBank mocks (new for scene launching) - use smaller sizes for testing
         when(mockHost.createSceneBank(128)).thenReturn(mockSceneBank);
@@ -231,8 +241,16 @@ public class BitwigApiFacadeTest {
         // Clip slot extra properties
         lenient().when(mockClipLauncherSlot.isRecording()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
         lenient().when(mockClipLauncherSlot.isPlaybackQueued()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
+        lenient().when(mockClipLauncherSlot.isRecordingQueued()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
+        lenient().when(mockClipLauncherSlot.isStopQueued()).thenReturn(mock(com.bitwig.extension.controller.api.BooleanValue.class));
         lenient().when(mockClipLauncherSlot.color()).thenReturn(mock(com.bitwig.extension.controller.api.SettableColorValue.class));
         lenient().when(mockClipLauncherSlot.name()).thenReturn(mock(com.bitwig.extension.controller.api.SettableStringValue.class));
+
+        // Setup Send mock properties
+        lenient().when(mockSend.name()).thenReturn(mock(com.bitwig.extension.controller.api.StringValue.class));
+        lenient().when(mockSend.value()).thenReturn(mock(com.bitwig.extension.controller.api.Parameter.class));
+        lenient().when(mockSend.displayedValue()).thenReturn(mock(com.bitwig.extension.controller.api.StringValue.class));
+        lenient().when(mockSend.isEnabled()).thenReturn(mock(com.bitwig.extension.controller.api.SettableBooleanValue.class));
 
         // Setup parameter count mocks
         when(mockParameterBank.getParameterCount()).thenReturn(8);  // Default to 8 for device parameters
