@@ -82,6 +82,7 @@ public class BitwigApiFacade {
         cursorDevice.exists().markInterested();
         cursorDevice.name().markInterested();
         cursorDevice.isEnabled().markInterested();
+        cursorDevice.deviceType().markInterested();
 
         // Mark interest in all device parameter properties to enable value access
         for (int i = 0; i < deviceParameterBank.getParameterCount(); i++) {
@@ -109,6 +110,7 @@ public class BitwigApiFacade {
         cursorTrack.mute().markInterested();
         cursorTrack.solo().markInterested();
         cursorTrack.arm().markInterested();
+        cursorTrack.position().markInterested();
 
         // Mark interest in track properties for clip launching and track listing
         for (int trackIndex = 0; trackIndex < trackBank.getSizeOfBank(); trackIndex++) {
@@ -1308,10 +1310,10 @@ public class BitwigApiFacade {
      * @return List of device summary objects with detailed information
      * @throws BitwigApiException if the track is not found or API access fails
      */
-    public List<Map<String, Object>> getDevicesOnTrack(Integer trackIndex, String trackName, Boolean getSelected) 
+    public List<Map<String, Object>> getDevicesOnTrack(Integer trackIndex, String trackName, Boolean getSelected)
             throws BitwigApiException {
         final String operation = "getDevicesOnTrack";
-        
+
         try {
             Track targetTrack = null;
             int resolvedTrackIndex = -1;
@@ -1320,17 +1322,17 @@ public class BitwigApiFacade {
             if (trackIndex != null) {
                 // Track by index
                 if (trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
-                    throw new BitwigApiException(ErrorCode.INVALID_RANGE, operation, 
+                    throw new BitwigApiException(ErrorCode.INVALID_RANGE, operation,
                         "Track index " + trackIndex + " is out of range [0, " + (trackBank.getSizeOfBank() - 1) + "]");
                 }
-                
+
                 targetTrack = trackBank.getItemAt(trackIndex);
                 if (!targetTrack.exists().get()) {
-                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
                         "Track at index " + trackIndex + " does not exist");
                 }
                 resolvedTrackIndex = trackIndex;
-                
+
             } else if (trackName != null) {
                 // Track by name - find exact match
                 for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
@@ -1341,19 +1343,19 @@ public class BitwigApiFacade {
                         break;
                     }
                 }
-                
+
                 if (targetTrack == null) {
-                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
                         "No track found with name '" + trackName + "'");
                 }
-                
+
             } else if (Boolean.TRUE.equals(getSelected)) {
                 // Use selected track (cursor track)
                 if (!cursorTrack.exists().get()) {
-                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
                         "No track is currently selected");
                 }
-                
+
                 // Find the index of the cursor track in the track bank
                 String selectedTrackName = cursorTrack.name().get();
                 for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
@@ -1364,26 +1366,26 @@ public class BitwigApiFacade {
                         break;
                     }
                 }
-                
+
                 if (targetTrack == null) {
-                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation, 
+                    throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
                         "Selected track not found in track bank");
                 }
             }
 
             if (targetTrack == null) {
-                throw new BitwigApiException(ErrorCode.INVALID_PARAMETER, operation, 
+                throw new BitwigApiException(ErrorCode.INVALID_PARAMETER, operation,
                     "No valid track identifier provided");
             }
 
             // Get devices for the resolved track
             return getDetailedTrackDevices(resolvedTrackIndex, targetTrack);
-            
+
         } catch (BitwigApiException e) {
             throw e;
         } catch (Exception e) {
             logger.error("BitwigApiFacade: Unexpected error in " + operation + ": " + e.getMessage());
-            throw new BitwigApiException(ErrorCode.BITWIG_API_ERROR, operation, 
+            throw new BitwigApiException(ErrorCode.BITWIG_API_ERROR, operation,
                 "Failed to get devices for track: " + e.getMessage());
         }
     }
@@ -1406,11 +1408,11 @@ public class BitwigApiFacade {
             }
 
             DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
-            
+
             // Determine if this track is the currently selected track
-            boolean isSelectedTrack = cursorTrack.exists().get() && 
+            boolean isSelectedTrack = cursorTrack.exists().get() &&
                 track.name().get().equals(cursorTrack.name().get());
-            
+
             // Get cursor device info for selection comparison
             String selectedDeviceName = null;
             boolean hasCursorDevice = cursorDevice.exists().get();
@@ -1478,9 +1480,9 @@ public class BitwigApiFacade {
         if (rawDeviceType == null) {
             return "Unknown";
         }
-        
+
         String lowerType = rawDeviceType.toLowerCase();
-        
+
         if (lowerType.contains("instrument")) {
             return "Instrument";
         } else if (lowerType.contains("note") || lowerType.contains("midi")) {
@@ -1490,5 +1492,252 @@ public class BitwigApiFacade {
         } else {
             return "Unknown";
         }
+    }
+
+    /**
+     * Gets detailed device information including remote controls and pages.
+     *
+     * @param trackIndex The track index (nullable)
+     * @param trackName The track name (nullable)
+     * @param deviceIndex The device index (nullable)
+     * @param deviceName The device name (nullable)
+     * @param getForSelectedDevice Whether to get selected device (nullable)
+     * @return DeviceDetailsResult containing complete device information
+     * @throws BitwigApiException if device/track not found or parameters invalid
+     */
+    public io.github.fabb.wigai.features.DeviceController.DeviceDetailsResult getDeviceDetails(
+            Integer trackIndex, String trackName, Integer deviceIndex, String deviceName, Boolean getForSelectedDevice)
+            throws BitwigApiException {
+        final String operation = "getDeviceDetails";
+
+        try {
+            // Determine operation mode
+            boolean isSelectedDeviceMode = Boolean.TRUE.equals(getForSelectedDevice) ||
+                (trackIndex == null && trackName == null && deviceIndex == null && deviceName == null);
+
+            if (isSelectedDeviceMode) {
+                return getSelectedDeviceDetails();
+            } else {
+                return getTargetDeviceDetails(trackIndex, trackName, deviceIndex, deviceName);
+            }
+
+        } catch (BitwigApiException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("BitwigApiFacade: Unexpected error in " + operation + ": " + e.getMessage());
+            throw new BitwigApiException(ErrorCode.BITWIG_API_ERROR, operation,
+                "Failed to get device details: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gets details for the currently selected device.
+     */
+    private io.github.fabb.wigai.features.DeviceController.DeviceDetailsResult getSelectedDeviceDetails()
+            throws BitwigApiException {
+        final String operation = "getSelectedDeviceDetails";
+
+        // Check if device is selected
+        if (!cursorDevice.exists().get()) {
+            throw new BitwigApiException(ErrorCode.DEVICE_NOT_SELECTED, operation,
+                "No device is currently selected");
+        }
+
+        // Check if cursor track exists
+        if (!cursorTrack.exists().get()) {
+            throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
+                "No track is currently selected");
+        }
+
+        // Get track index directly from cursor track position
+        int resolvedTrackIndex = cursorTrack.position().get();
+        String selectedTrackName = cursorTrack.name().get();
+
+        // Verify the position is within our track bank range
+        if (resolvedTrackIndex < 0 || resolvedTrackIndex >= trackBank.getSizeOfBank()) {
+            throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
+                "Selected track position " + resolvedTrackIndex + " is outside track bank range [0, " + (trackBank.getSizeOfBank() - 1) + "]");
+        }
+
+        // Get device basic properties
+        String deviceName = cursorDevice.name().get();
+        String rawDeviceType = cursorDevice.deviceType().get();
+        String mappedType = mapDeviceType(rawDeviceType);
+        boolean isEnabled = cursorDevice.isEnabled().get();
+        boolean isBypassed = !isEnabled;
+
+        // Find device index by comparing with devices in the track
+        int deviceIndex = findDeviceIndexInTrack(resolvedTrackIndex, deviceName);
+
+        // Get remote controls for the currently selected page
+        List<ParameterInfo> remoteControls = getDeviceRemoteControlsFromCursor();
+
+        return new io.github.fabb.wigai.features.DeviceController.DeviceDetailsResult(
+            resolvedTrackIndex,
+            selectedTrackName,
+            deviceIndex,
+            deviceName,
+            mappedType,
+            isBypassed,
+            true, // is_selected = true since this is the selected device
+            remoteControls
+        );
+    }
+
+    /**
+     * Gets details for a device specified by track and device identifiers.
+     */
+    private io.github.fabb.wigai.features.DeviceController.DeviceDetailsResult getTargetDeviceDetails(
+            Integer trackIndex, String trackName, Integer deviceIndex, String deviceName)
+            throws BitwigApiException {
+        final String operation = "getTargetDeviceDetails";
+
+        // Resolve target track
+        Track targetTrack = null;
+        int resolvedTrackIndex = -1;
+
+        if (trackIndex != null) {
+            if (trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
+                throw new BitwigApiException(ErrorCode.INVALID_RANGE, operation,
+                    "Track index " + trackIndex + " is out of range [0, " + (trackBank.getSizeOfBank() - 1) + "]");
+            }
+            targetTrack = trackBank.getItemAt(trackIndex);
+            if (!targetTrack.exists().get()) {
+                throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
+                    "Track at index " + trackIndex + " does not exist");
+            }
+            resolvedTrackIndex = trackIndex;
+        } else if (trackName != null) {
+            for (int i = 0; i < trackBank.getSizeOfBank(); i++) {
+                Track track = trackBank.getItemAt(i);
+                if (track.exists().get() && trackName.equals(track.name().get())) {
+                    targetTrack = track;
+                    resolvedTrackIndex = i;
+                    break;
+                }
+            }
+            if (targetTrack == null) {
+                throw new BitwigApiException(ErrorCode.TRACK_NOT_FOUND, operation,
+                    "No track found with name '" + trackName + "'");
+            }
+        }
+
+        // Resolve target device
+        DeviceBank deviceBank = trackDeviceBanks.get(resolvedTrackIndex);
+        Device targetDevice = null;
+        int resolvedDeviceIndex = -1;
+
+        if (deviceIndex != null) {
+            if (deviceIndex < 0 || deviceIndex >= deviceBank.getSizeOfBank()) {
+                throw new BitwigApiException(ErrorCode.INVALID_RANGE, operation,
+                    "Device index " + deviceIndex + " is out of range [0, " + (deviceBank.getSizeOfBank() - 1) + "]");
+            }
+            targetDevice = deviceBank.getItemAt(deviceIndex);
+            if (!targetDevice.exists().get()) {
+                throw new BitwigApiException(ErrorCode.DEVICE_NOT_FOUND, operation,
+                    "Device at index " + deviceIndex + " does not exist on track");
+            }
+            resolvedDeviceIndex = deviceIndex;
+        } else if (deviceName != null) {
+            for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
+                Device device = deviceBank.getItemAt(i);
+                if (device.exists().get() && deviceName.equals(device.name().get())) {
+                    targetDevice = device;
+                    resolvedDeviceIndex = i;
+                    break;
+                }
+            }
+            if (targetDevice == null) {
+                throw new BitwigApiException(ErrorCode.DEVICE_NOT_FOUND, operation,
+                    "No device found with name '" + deviceName + "' on track");
+            }
+        }
+
+        // Get device basic properties
+        String actualDeviceName = targetDevice.name().get();
+        String rawDeviceType = targetDevice.deviceType().get();
+        String mappedType = mapDeviceType(rawDeviceType);
+        boolean isEnabled = targetDevice.isEnabled().get();
+        boolean isBypassed = !isEnabled;
+
+        // Determine if this device is selected by comparing with cursor device
+        boolean isSelected = isDeviceSelectedComparison(resolvedTrackIndex, targetTrack.name().get(),
+                                                       resolvedDeviceIndex, actualDeviceName);
+
+        // For non-selected devices, remote control access is limited
+        List<ParameterInfo> remoteControls = getDeviceRemoteControlsFromDevice(targetDevice);
+
+        return new io.github.fabb.wigai.features.DeviceController.DeviceDetailsResult(
+            resolvedTrackIndex,
+            targetTrack.name().get(),
+            resolvedDeviceIndex,
+            actualDeviceName,
+            mappedType,
+            isBypassed,
+            isSelected,
+            remoteControls
+        );
+    }
+
+    /**
+     * Gets remote controls from the cursor device (selected device).
+     *
+     * This directly returns the existing device parameters since they represent
+     * the same data (remote controls for the currently selected page).
+     */
+    private List<ParameterInfo> getDeviceRemoteControlsFromCursor() {
+        // Direct access to selected device parameters - no conversion needed
+        return getSelectedDeviceParameters();
+    }
+
+    /**
+     * Gets remote controls from a specific device (non-cursor).
+     *
+     * Note: The Bitwig Controller API does not easily expose remote controls
+     * for non-selected devices without temporarily selecting them, which would
+     * disrupt the user experience. Therefore, this method returns an empty list.
+     */
+    private List<ParameterInfo> getDeviceRemoteControlsFromDevice(Device device) {
+        // Limitation: Bitwig Controller API does not provide easy access to
+        // remote controls for non-selected devices
+        return new ArrayList<>();
+    }
+
+    /**
+     * Finds the index of a device in a track by comparing names.
+     */
+    private int findDeviceIndexInTrack(int trackIndex, String deviceName) {
+        if (trackIndex < 0 || trackIndex >= trackDeviceBanks.size()) {
+            return -1;
+        }
+
+        DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
+        for (int i = 0; i < deviceBank.getSizeOfBank(); i++) {
+            Device device = deviceBank.getItemAt(i);
+            if (device.exists().get() && deviceName.equals(device.name().get())) {
+                return i;
+            }
+        }
+        return -1; // Not found
+    }
+
+    /**
+     * Determines if a device is selected by comparing with cursor device.
+     */
+    private boolean isDeviceSelectedComparison(int trackIndex, String trackName, int deviceIndex, String deviceName) {
+        // Check if cursor device exists
+        if (!cursorDevice.exists().get() || !cursorTrack.exists().get()) {
+            return false;
+        }
+
+        // Compare track
+        String selectedTrackName = cursorTrack.name().get();
+        if (!trackName.equals(selectedTrackName)) {
+            return false;
+        }
+
+        // Compare device name
+        String selectedDeviceName = cursorDevice.name().get();
+        return deviceName.equals(selectedDeviceName);
     }
 }

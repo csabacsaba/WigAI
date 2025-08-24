@@ -56,7 +56,7 @@ class ListDevicesOnTrackToolTest {
     @Test
     void testSpecificationCreation() {
         McpServerFeatures.SyncToolSpecification spec = ListDevicesOnTrackTool.specification(bitwigApiFacade, structuredLogger);
-        
+
         assertNotNull(spec);
         assertEquals("list_devices_on_track", spec.tool().name());
         assertNotNull(spec.tool().description());
@@ -123,7 +123,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertFalse(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("success", response.get("status").asText());
@@ -149,7 +149,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertFalse(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("success", response.get("status").asText());
@@ -175,7 +175,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertFalse(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("success", response.get("status").asText());
@@ -201,7 +201,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertFalse(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("success", response.get("status").asText());
@@ -229,7 +229,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("error", response.get("status").asText());
@@ -253,7 +253,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("error", response.get("status").asText());
@@ -277,7 +277,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("error", response.get("status").asText());
@@ -304,7 +304,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("error", response.get("status").asText());
@@ -332,7 +332,7 @@ class ListDevicesOnTrackToolTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isError());
-        
+
         String responseJson = ((McpSchema.TextContent) result.content().get(0)).text();
         JsonNode response = objectMapper.readTree(responseJson);
         assertEquals("error", response.get("status").asText());
@@ -344,7 +344,7 @@ class ListDevicesOnTrackToolTest {
      */
     private List<Map<String, Object>> createMockDevicesList() {
         List<Map<String, Object>> devices = new ArrayList<>();
-        
+
         Map<String, Object> device1 = new LinkedHashMap<>();
         device1.put("index", 0);
         device1.put("name", "EQ Eight");
@@ -352,7 +352,7 @@ class ListDevicesOnTrackToolTest {
         device1.put("bypassed", false);
         device1.put("is_selected", false);
         devices.add(device1);
-        
+
         Map<String, Object> device2 = new LinkedHashMap<>();
         device2.put("index", 1);
         device2.put("name", "Compressor");
@@ -360,7 +360,7 @@ class ListDevicesOnTrackToolTest {
         device2.put("bypassed", false);
         device2.put("is_selected", true);
         devices.add(device2);
-        
+
         return devices;
     }
 }

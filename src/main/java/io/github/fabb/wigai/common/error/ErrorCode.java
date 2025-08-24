@@ -15,6 +15,7 @@ public enum ErrorCode {
 
     // State Errors
     DEVICE_NOT_SELECTED("DEVICE_NOT_SELECTED", "No device is currently selected"),
+    DEVICE_NOT_FOUND("DEVICE_NOT_FOUND", "Specified device was not found"),
     TRACK_NOT_FOUND("TRACK_NOT_FOUND", "Specified track was not found"),
     SCENE_NOT_FOUND("SCENE_NOT_FOUND", "Specified scene was not found"),
     CLIP_NOT_FOUND("CLIP_NOT_FOUND", "Specified clip was not found"),

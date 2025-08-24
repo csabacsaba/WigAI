@@ -43,11 +43,9 @@ public class DeviceControllerTest {
         // Arrange
         String deviceName = "Test Device";
         List<ParameterInfo> parameters = Arrays.asList(
-            new ParameterInfo(0, "Param 1", 0.5, "50%"),
-            new ParameterInfo(1, "Param 2", 0.75, "75%")
-        );
-
-        when(mockBitwigApiFacade.getSelectedDeviceName()).thenReturn(deviceName);
+                new ParameterInfo(0, "Param 1", 0.5, "50%"),
+                new ParameterInfo(1, "Param 2", 0.75, "75%")
+        );        when(mockBitwigApiFacade.getSelectedDeviceName()).thenReturn(deviceName);
         when(mockBitwigApiFacade.getSelectedDeviceParameters()).thenReturn(parameters);
 
         // Act

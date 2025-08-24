@@ -477,7 +477,6 @@ Communication is message-based, typically using JSON-RPC or a similar structured
     - Selection semantics:
       - If the target track is not the globally selected track, `is_selected` is `false` for all devices.
       - If the target track is the globally selected track, compare against the global CursorDevice; prefer same-track index match, otherwise name match on that track (first match if ambiguous).
-    - Optional UI-state fields (`is_expanded`, `is_window_open`) may be omitted or null if not provided by the Bitwig Controller API.
 
 *   **Examples**:
 
@@ -692,8 +691,6 @@ Rules:
     "name": "Compressor",
     "type": "AudioFX", // "Instrument" | "AudioFX" | "NoteFX" | "Unknown"
     "is_bypassed": false,
-    "is_expanded": null,       // null if not exposed by API
-    "is_window_open": null,    // null if not exposed by API
     "is_selected": true,
     "remote_controls": [
       {
@@ -704,16 +701,7 @@ Rules:
         "raw_value": null,      // null if raw not available
         "display_value": "-12.0 dB"
       }
-      // ... up to 8 entries (0-7). Missing controls use: { "index": n, "exists": false, "name": null, "value": null, "raw_value": null, "display_value": null }
-    ],
-    "remote_control_pages": [
-      {
-        "index": 0,
-        "exists": true,
-        "name": "Main",
-        "is_selected": true
-      }
-      // ... up to 8 entries (0-7). Missing pages use: { "index": n, "exists": false, "name": null, "is_selected": null }
+      // ... only existing controls are included
     ]
   }
 }
@@ -723,8 +711,7 @@ Rules:
   - `remote_controls` reflect the currently selected remote control page for the device (via `device.remoteControls()`).
   - `exists` for controls is `true` when the parameter name is non-empty; otherwise `false` (defined heuristic).
   - `value` is normalized (0.0-1.0). `raw_value` is provided only if the Controller API exposes a raw accessor; otherwise `null`.
-  - `remote_control_pages` come from `device.remoteControls().pageBank()`; `is_selected` is derived from the page's selection state. Exactly one page should be selected.
-  - If fewer than 8 controls/pages are present, remaining slots are filled with `exists=false` and nullable fields set to `null`.
+  - Only existing controls are included in the response array.
 
 - Errors:
   - `INVALID_PARAMETER`
