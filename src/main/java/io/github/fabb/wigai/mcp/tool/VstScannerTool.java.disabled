@@ -1,0 +1,118 @@
+package io.github.fabb.wigai.mcp.tool;
+
+import io.github.fabb.wigai.bitwig.VstPluginScanner;
+import io.github.fabb.wigai.common.logging.StructuredLogger;
+import io.github.fabb.wigai.mcp.McpErrorHandler;
+import io.modelcontextprotocol.server.McpServerFeatures;
+import io.modelcontextprotocol.server.McpSyncServerExchange;
+import io.modelcontextprotocol.spec.McpSchema;
+import io.modelcontextprotocol.spec.McpSchema.CallToolRequest;
+
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
+/**
+ * MCP Tool for scanning available VST/CLAP plugins in Bitwig Studio.
+ */
+public class VstScannerTool {
+
+    /**
+     * Creates the MCP tool specification for scanning VST plugins.
+     */
+    public static McpServerFeatures.SyncToolSpecification scanPluginsSpecification(
+            VstPluginScanner scanner,
+            StructuredLogger logger) {
+
+        var scanPluginsSchema = """
+            {
+              "type": "object",
+              "properties": {
+                "plugin_type": {
+                  "type": "string",
+                  "enum": ["VST2", "VST3", "CLAP", "ALL"],
+                  "description": "Type of plugins to scan (default: ALL)",
+                  "default": "ALL"
+                }
+              }
+            }""";
+
+        var tool = McpSchema.Tool.builder()
+            .name("scan_vst_plugins")
+            .description("Scan for available VST2, VST3, and CLAP plugins in Bitwig Studio")
+            .inputSchema(scanPluginsSchema)
+            .build();
+
+        BiFunction<McpSyncServerExchange, CallToolRequest, McpSchema.CallToolResult> handler =
+            (exchange, req) -> McpErrorHandler.executeWithErrorHandling(
+                "scan_vst_plugins",
+                logger,
+                () -> {
+                    Map<String, Object> args = req.arguments();
+                    String pluginType = args.getOrDefault("plugin_type", "ALL").toString().toUpperCase();
+
+                    Map<String, Object> responseData = new LinkedHashMap<>();
+                    responseData.put("action", "scan_plugins");
+                    responseData.put("plugin_type_requested", pluginType);
+
+                    List<VstPluginScanner.PluginMetadata> plugins;
+                    
+                    switch (pluginType) {
+                        case "VST2":
+                            plugins = scanner.scanVst2Plugins();
+                            responseData.put("plugins", plugins.stream()
+                                .map(VstPluginScanner.PluginMetadata::toMap)
+                                .collect(Collectors.toList()));
+                            responseData.put("total_count", plugins.size());
+                            break;
+                            
+                        case "VST3":
+                            plugins = scanner.scanVst3Plugins();
+                            responseData.put("plugins", plugins.stream()
+                                .map(VstPluginScanner.PluginMetadata::toMap)
+                                .collect(Collectors.toList()));
+                            responseData.put("total_count", plugins.size());
+                            break;
+                            
+                        case "CLAP":
+                            plugins = scanner.scanClapPlugins();
+                            responseData.put("plugins", plugins.stream()
+                                .map(VstPluginScanner.PluginMetadata::toMap)
+                                .collect(Collectors.toList()));
+                            responseData.put("total_count", plugins.size());
+                            break;
+                            
+                        case "ALL":
+                        default:
+                            Map<String, List<VstPluginScanner.PluginMetadata>> allPlugins = scanner.scanAllPlugins();
+                            
+                            Map<String, Object> pluginsByType = new LinkedHashMap<>();
+                            int totalCount = 0;
+                            
+                            for (Map.Entry<String, List<VstPluginScanner.PluginMetadata>> entry : allPlugins.entrySet()) {
+                                List<Map<String, Object>> pluginList = entry.getValue().stream()
+                                    .map(VstPluginScanner.PluginMetadata::toMap)
+                                    .collect(Collectors.toList());
+                                pluginsByType.put(entry.getKey().toLowerCase(), pluginList);
+                                totalCount += entry.getValue().size();
+                            }
+                            
+                            responseData.put("plugins_by_type", pluginsByType);
+                            responseData.put("total_count", totalCount);
+                            responseData.put("vst2_count", allPlugins.get("VST2").size());
+                            responseData.put("vst3_count", allPlugins.get("VST3").size());
+                            responseData.put("clap_count", allPlugins.get("CLAP").size());
+                            break;
+                    }
+
+                    responseData.put("message", String.format("Plugin scan complete for %s", pluginType));
+                    return responseData;
+                }
+            );
+
+        return McpServerFeatures.SyncToolSpecification.builder()
+            .tool(tool)
+            .callHandler(handler)
+            .build();
+    }
+}

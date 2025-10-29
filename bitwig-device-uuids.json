@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "bitwig_version": "5.0+",
+    "api_version": 19,
+    "last_updated": "2025-10-24",
+    "contributors": ["csabagodor"],
+    "notes": "This is a community-maintained registry of Bitwig device UUIDs for programmatic device insertion via the Controller API."
+  },
+  "devices": {
+    "instruments": {
+      "Polysynth": "a9ffacb5-33e9-4fc7-8621-b1af31e410ef",
+      "Sampler": "468bc14b-b2e7-45a1-9666-e83117fe404e",
+      "Polymer": "8f58138b-03aa-4e9d-83bd-a038c99a4ed5",
+      "Drum Machine": "8ea97e45-0255-40fd-bc7e-94419741e9d1"
+    },
+    "audio_fx": {
+      "EQ+": "e4815188-ba6f-4d14-bcfc-2dcb8f778ccb",
+      "Compressor+": "42b32cd2-6275-4ff1-970f-4fac71d15ad9",
+      "Delay+": "f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9",
+      "Reverb": "5a1cb339-1c4a-4cc7-9cae-bd7a2058153d",
+      "Filter+": "6d621c1c-ab64-43b4-aea3-dad37e6f649c",
+      "Distortion": "b5b2b08e-730e-4192-be71-f572ceb5069b"
+    },
+    "note_fx": {
+    },
+    "containers": {
+    },
+    "modulators": {
+    },
+    "utility": {
+      "Tool": "e67b9c56-838d-4fba-8e3e-ae4e02cccbcb",
+      "Note Receiver": "c6153773-ed96-4cca-a767-5cf3d5dceacb",
+      "Audio Receiver": "46b3e40a-629c-42c2-9e14-a1ccbcaa903b"
+    }
+  }
+}

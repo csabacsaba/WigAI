@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "version": "2.0.0",
+    "bitwig_version": "5.0+",
+    "last_updated": "2025-10-25",
+    "source": "DrivenByMoss",
+    "notes": "Device UUID registry - Bitwig native + selected VST plugins (Sylenth1, Spire, Massive, Pigments, FabFilter Saturn 2)"
+  },
+  "devices": {
+    "bitwig_instruments": {
+      "Polysynth": "a9ffacb5-33e9-4fc7-8621-b1af31e410ef",
+      "Sampler": "468bc14b-b2e7-45a1-9666-e83117fe404e",
+      "Polymer": "8f58138b-03aa-4e9d-83bd-a038c99a4ed5",
+      "Drum Machine": "8ea97e45-0255-40fd-bc7e-94419741e9d1",
+      "Chain": "c86d21fb-d544-4daf-a1bf-57de22aa320c",
+      "E-Clap": "89eba41d-46d3-4506-8ce6-ba9fe3e3bee4",
+      "E-Cowbell": "dd594db1-a908-453f-a1b9-0a1b6c4c3b32",
+      "E-Hat": "742e4a89-df78-4ca5-b6b0-ca78889d5953",
+      "E-Kick": "c6d5de18-a6f1-4daa-90a9-d9254527601a",
+      "E-Snare": "db22eb41-c8a0-4055-b617-637614dfa185",
+      "E-Tom": "b5c7c298-e6af-42b3-8f14-26e25bb72d48",
+      "FM-4": "7a0a94df-3aa4-4bb5-8e24-2511999871ad",
+      "HW CV Instrument": "c511bc17-9ebf-43de-a20c-4a9e40028fdf",
+      "HW Instrument": "6a27aef7-bba5-4b0d-af98-7c192f84fbc2",
+      "Instrument Layer": "5024be2e-65d6-4d40-bbfe-8b2ea993c445",
+      "Instrument Selector": "9588fbcf-721a-438b-8555-97e4231f7d2c",
+      "Organ": "f2dcfe9a-7b66-4c84-984a-b25685a1c21a",
+      "Phase-4": "252723bf-68a6-4ee6-81f8-95ba4d0fb467",
+      "Poly Grid": "a33bba66-8cd4-4f89-aee5-68bf67f70a54",
+      "Vocoder": "a0cb2ec0-2464-461c-8165-296f98905539",
+      "XY Instrument": "bab3f04d-d3b6-4dfa-86f9-506e0b091ca8"
+    },
+    "bitwig_audio_fx": {
+      "EQ+": "e4815188-ba6f-4d14-bcfc-2dcb8f778ccb",
+      "Reverb": "5a1cb339-1c4a-4cc7-9cae-bd7a2058153d",
+      "Compressor": "2b1b4787-8d74-4138-877b-9197209eef0f",
+      "Delay+": "f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9",
+      "Filter+": "6d621c1c-ab64-43b4-aea3-dad37e6f649c",
+      "Distortion": "b5b2b08e-730e-4192-be71-f572ceb5069b",
+      "Chorus": "d275f9a6-0e4a-409c-9dc4-d74af90bc7ae",
+      "Chorus+": "1b8f2226-c432-4a0a-9830-69bc76d1a276",
+      "Flanger": "8393c436-b11b-4fee-85dd-b2ef0a2ed380",
+      "Flanger+": "a99f8c3c-7813-4e6b-a18a-302c74286efc",
+      "Phaser": "fc87ae07-1624-449f-8dae-2db5d93e1aa9",
+      "Phaser+": "fd7a9e6c-6992-40c2-be3b-ac8ed48553e9"
+    },
+    "clap_instruments": {},
+    "clap_audio_fx": {},
+    "vst2_instruments": {},
+    "vst2_audio_fx": {
+      "FabFilter Saturn 2": "1179857505"
+    },
+    "vst3_instruments": {
+      "Sylenth1": "56535473796C3173796C656E74683100",
+      "Spire": "1399878194",
+      "Massive": "5653544E694D616D6173736976650000",
+      "Pigments": "41727475415649534B61743150726F63"
+    },
+    "vst3_audio_fx": {}
+  }
+}

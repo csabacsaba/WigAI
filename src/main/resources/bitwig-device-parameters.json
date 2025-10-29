@@ -1,0 +1,313 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "bitwig_version": "5.0+",
+    "last_updated": "2025-10-27",
+    "description": "Parameter mappings for Bitwig native devices"
+  },
+  "devices": {
+    "EQ+": {
+      "uuid": "e4815188-ba6f-4d14-bcfc-2dcb8f778ccb",
+      "type": "audio_fx",
+      "description": "8-band parametric equalizer with multiple filter types",
+      "pages": [
+        {
+          "index": 0,
+          "name": "Gains",
+          "description": "Gain controls for each EQ band",
+          "parameters": [
+            {"index": 0, "name": "Band 1 Gain", "unit": "dB", "description": "Low shelf gain"},
+            {"index": 1, "name": "Band 2 Gain", "unit": "dB", "description": "Parametric band 1 gain"},
+            {"index": 2, "name": "Band 3 Gain", "unit": "dB", "description": "Parametric band 2 gain"},
+            {"index": 3, "name": "Band 4 Gain", "unit": "dB", "description": "Parametric band 3 gain"},
+            {"index": 4, "name": "Band 5 Gain", "unit": "dB", "description": "Parametric band 4 gain"},
+            {"index": 5, "name": "Band 6 Gain", "unit": "dB", "description": "Parametric band 5 gain"},
+            {"index": 6, "name": "Band 7 Gain", "unit": "dB", "description": "Parametric band 6 gain"},
+            {"index": 7, "name": "Band 8 Gain", "unit": "dB", "description": "High shelf gain"}
+          ]
+        },
+        {
+          "index": 1,
+          "name": "Freqs",
+          "description": "Frequency controls for each EQ band",
+          "parameters": [
+            {"index": 0, "name": "Band 1 Freq", "unit": "Hz", "range": "20-1000", "description": "Low shelf frequency"},
+            {"index": 1, "name": "Band 2 Freq", "unit": "Hz", "range": "20-20000", "description": "Parametric band 1 frequency"},
+            {"index": 2, "name": "Band 3 Freq", "unit": "Hz", "range": "20-20000", "description": "Parametric band 2 frequency"},
+            {"index": 3, "name": "Band 4 Freq", "unit": "Hz", "range": "20-20000", "description": "Parametric band 3 frequency"},
+            {"index": 4, "name": "Band 5 Freq", "unit": "Hz", "range": "20-20000", "description": "Parametric band 4 frequency"},
+            {"index": 5, "name": "Band 6 Freq", "unit": "Hz", "range": "20-20000", "description": "Parametric band 5 frequency"},
+            {"index": 6, "name": "Band 7 Freq", "unit": "Hz", "range": "20-20000", "description": "Parametric band 6 frequency"},
+            {"index": 7, "name": "Band 8 Freq", "unit": "Hz", "range": "1000-20000", "description": "High shelf frequency"}
+          ]
+        },
+        {
+          "index": 2,
+          "name": "Qs",
+          "description": "Q factor (bandwidth) controls for parametric bands",
+          "parameters": [
+            {"index": 0, "name": "Band 1 Q", "unit": "", "description": "Low shelf Q factor (not used for shelf)"},
+            {"index": 1, "name": "Band 2 Q", "unit": "", "range": "0.1-10", "description": "Parametric band 1 Q factor"},
+            {"index": 2, "name": "Band 3 Q", "unit": "", "range": "0.1-10", "description": "Parametric band 2 Q factor"},
+            {"index": 3, "name": "Band 4 Q", "unit": "", "range": "0.1-10", "description": "Parametric band 3 Q factor"},
+            {"index": 4, "name": "Band 5 Q", "unit": "", "range": "0.1-10", "description": "Parametric band 4 Q factor"},
+            {"index": 5, "name": "Band 6 Q", "unit": "", "range": "0.1-10", "description": "Parametric band 5 Q factor"},
+            {"index": 6, "name": "Band 7 Q", "unit": "", "range": "0.1-10", "description": "Parametric band 6 Q factor"},
+            {"index": 7, "name": "Band 8 Q", "unit": "", "description": "High shelf Q factor (not used for shelf)"}
+          ]
+        }
+      ],
+      "common_use_cases": [
+        {
+          "name": "Remove sub frequencies below 120Hz",
+          "description": "Use Band 1 (low shelf) to cut frequencies below 120Hz",
+          "steps": [
+            "Switch to Freqs page (page_index=1)",
+            "Set Band 1 Freq (param index 0) to 120Hz (normalized value ~0.1-0.2)",
+            "Switch to Gains page (page_index=0)",
+            "Set Band 1 Gain (param index 0) to negative value (e.g., 0.0 = -12dB)"
+          ]
+        }
+      ]
+    },
+    "Filter+": {
+      "uuid": "6d621c1c-ab64-43b4-aea3-dad37e6f649c",
+      "type": "audio_fx",
+      "description": "Versatile filter with LFO modulation and multiple filter types",
+      "pages": [
+        {
+          "index": 0,
+          "name": "Filter+",
+          "description": "Main filter controls with LFO modulation",
+          "parameters": [
+            {"index": 0, "name": "LFO Skew", "unit": "%", "description": "Shapes the LFO waveform (0-100%)"},
+            {"index": 1, "name": "Timebase", "unit": "", "description": "LFO speed/rate control"},
+            {"index": 2, "name": "Wave", "unit": "", "description": "LFO waveform selection"},
+            {"index": 3, "name": "LFO Stereo", "unit": "%", "description": "Stereo phase offset for LFO (0-100%)"},
+            {"index": 4, "name": "SL Width", "unit": "%", "description": "Stereo width control (0-100%)"},
+            {"index": 5, "name": "Pan", "unit": "", "description": "Stereo pan position (0.0=Left, 0.5=Center, 1.0=Right)"},
+            {"index": 6, "name": "Wet Gain", "unit": "dB", "description": "Wet signal gain"},
+            {"index": 7, "name": "Mix", "unit": "%", "description": "Dry/Wet balance (0=Dry, 100=Wet)"}
+          ]
+        }
+      ],
+      "common_use_cases": [
+        {
+          "name": "Classic filter sweep",
+          "description": "Use LFO to create rhythmic filter movement",
+          "steps": [
+            "Set Wave (param index 2) to desired waveform",
+            "Adjust Timebase (param index 1) for tempo-synced rate",
+            "Set Mix (param index 7) to 100% wet (value ~1.0)"
+          ]
+        },
+        {
+          "name": "Stereo filter widening",
+          "description": "Create wider stereo image using LFO stereo phase",
+          "steps": [
+            "Set LFO Stereo (param index 3) to 50% or higher (value ~0.5-1.0)",
+            "Adjust SL Width (param index 4) to taste (value ~0.5-0.8)",
+            "Set Mix (param index 7) to desired wet amount"
+          ]
+        }
+      ]
+    },
+    "Reverb": {
+      "uuid": "b94713ba-65c8-4a28-9916-f08ac5aa73dc",
+      "type": "audio_fx",
+      "description": "Algorithmic reverb with multiple room types and detailed control",
+      "pages": [
+        {
+          "index": 0,
+          "name": "Main",
+          "description": "Primary reverb controls",
+          "parameters": [
+            {"index": 0, "name": "Size", "unit": "%", "description": "Room size (0-100%)"},
+            {"index": 1, "name": "Pre-delay", "unit": "ms", "description": "Pre-delay time before reverb starts"},
+            {"index": 2, "name": "Diffusion", "unit": "%", "description": "Reverb diffusion amount (0-100%)"},
+            {"index": 3, "name": "R. Time", "unit": "s", "description": "Reverb decay time in seconds"},
+            {"index": 4, "name": "Early/Late", "unit": "%", "description": "Balance between early reflections and late reverb"},
+            {"index": 5, "name": "Buildup", "unit": "%", "description": "Reverb buildup characteristic"},
+            {"index": 6, "name": "St. Width", "unit": "%", "description": "Stereo width (0-100%)"},
+            {"index": 7, "name": "Mix", "unit": "%", "description": "Dry/Wet balance (0=Dry, 100=Wet)"}
+          ]
+        },
+        {
+          "index": 1,
+          "name": "Tone",
+          "description": "Frequency and tonal shaping",
+          "parameters": [
+            {"index": 0, "name": "Room", "unit": "", "description": "Room type selection"},
+            {"index": 1, "name": "Mode", "unit": "", "description": "Reverb algorithm mode"},
+            {"index": 2, "name": "Lo Freq", "unit": "Hz", "description": "Low frequency cutoff"},
+            {"index": 3, "name": "Lo Time", "unit": "s", "description": "Low frequency decay time"},
+            {"index": 4, "name": "Hi Freq", "unit": "Hz", "description": "High frequency cutoff"},
+            {"index": 5, "name": "Hi Time", "unit": "s", "description": "High frequency decay time"},
+            {"index": 6, "name": "Lo Time", "unit": "s", "description": "Low time control"},
+            {"index": 7, "name": "Hi Time", "unit": "s", "description": "High time control"}
+          ]
+        },
+        {
+          "index": 2,
+          "name": "Common",
+          "description": "Additional reverb controls",
+          "parameters": [
+            {"index": 0, "name": "R. Time", "unit": "s", "description": "Reverb time"},
+            {"index": 1, "name": "Early/Late", "unit": "%", "description": "Early/Late reflections balance"},
+            {"index": 2, "name": "Diffusion", "unit": "%", "description": "Diffusion amount"},
+            {"index": 3, "name": "Buildup", "unit": "%", "description": "Buildup amount"},
+            {"index": 4, "name": "Lo Time", "unit": "s", "description": "Low frequency time"},
+            {"index": 5, "name": "Hi Time", "unit": "s", "description": "High frequency time"},
+            {"index": 6, "name": "St. Width", "unit": "%", "description": "Stereo width"},
+            {"index": 7, "name": "Mix", "unit": "%", "description": "Dry/Wet mix"}
+          ]
+        }
+      ],
+      "common_use_cases": [
+        {
+          "name": "Small room ambience",
+          "description": "Create subtle room ambience for vocals or instruments",
+          "steps": [
+            "Switch to Main page (page_index=0)",
+            "Set Size (param index 0) to small room (~0.2-0.3)",
+            "Set R. Time (param index 3) to short decay (~0.3-0.5 for 0.5-1.5s)",
+            "Set Mix (param index 7) to subtle amount (~0.2-0.3)"
+          ]
+        },
+        {
+          "name": "Large hall reverb",
+          "description": "Create spacious hall reverb for dramatic effect",
+          "steps": [
+            "Switch to Main page (page_index=0)",
+            "Set Size (param index 0) to large (~0.8-1.0)",
+            "Set R. Time (param index 3) to long decay (~0.7-1.0 for 3-5s)",
+            "Set Pre-delay (param index 1) to add separation (~0.2-0.4)",
+            "Adjust Mix (param index 7) to taste"
+          ]
+        }
+      ]
+    },
+    "Delay+": {
+      "uuid": "c5b38bbd-6530-47e4-af32-d09477e1ae40",
+      "type": "audio_fx",
+      "description": "Flexible delay with multiple timing options and feedback controls",
+      "pages": [
+        {
+          "index": 0,
+          "name": "Tone",
+          "description": "Delay character and tone shaping",
+          "parameters": [
+            {"index": 0, "name": "Soft", "unit": "", "description": "Soft clipping amount"},
+            {"index": 1, "name": "Blur", "unit": "%", "description": "Blurs the delayed signal"},
+            {"index": 2, "name": "Blur Mode", "unit": "", "description": "Blur algorithm mode"},
+            {"index": 3, "name": "Forever", "unit": "", "description": "Infinite feedback toggle"},
+            {"index": 4, "name": "Ducking", "unit": "%", "description": "Duck delay when input is present"},
+            {"index": 5, "name": "Lo Cut", "unit": "Hz", "description": "Low frequency cut in feedback path"},
+            {"index": 6, "name": "Hi Cut", "unit": "Hz", "description": "High frequency cut in feedback path"},
+            {"index": 7, "name": "FB", "unit": "%", "description": "Feedback amount (0-100%)"}
+          ]
+        },
+        {
+          "index": 1,
+          "name": "Time",
+          "description": "Delay timing controls",
+          "parameters": [
+            {"index": 0, "name": "Unit", "unit": "", "description": "Time unit selection (ms, beats, etc.)"},
+            {"index": 1, "name": "Time", "unit": "", "description": "Delay time value"},
+            {"index": 2, "name": "Beats", "unit": "", "description": "Delay time in beats if tempo-synced"},
+            {"index": 3, "name": "Unit %", "unit": "%", "description": "Time unit percentage"},
+            {"index": 4, "name": "Up Rate", "unit": "", "description": "Update rate for modulation"},
+            {"index": 5, "name": "Fade", "unit": "", "description": "Fade mode"},
+            {"index": 6, "name": "Detune", "unit": "", "description": "Pitch detune amount"},
+            {"index": 7, "name": "St Detune", "unit": "", "description": "Stereo detune amount"}
+          ]
+        },
+        {
+          "index": 2,
+          "name": "Details",
+          "description": "Additional delay parameters",
+          "parameters": [
+            {"index": 0, "name": "Soft", "unit": "", "description": "Soft clipping"},
+            {"index": 1, "name": "Clip Mode", "unit": "", "description": "Clipping algorithm mode"},
+            {"index": 2, "name": "Click", "unit": "", "description": "Clock sync click"},
+            {"index": 3, "name": "Pattern", "unit": "", "description": "Delay pattern selector"},
+            {"index": 4, "name": "St. Width", "unit": "%", "description": "Stereo width (0-100%)"},
+            {"index": 5, "name": "Width+FB", "unit": "%", "description": "Stereo width with feedback"},
+            {"index": 6, "name": "Crosfeed", "unit": "%", "description": "Crossfeed between L/R channels"},
+            {"index": 7, "name": "Mix", "unit": "%", "description": "Dry/Wet balance (0=Dry, 100=Wet)"}
+          ]
+        }
+      ],
+      "common_use_cases": [
+        {
+          "name": "Rhythmic delay",
+          "description": "Create tempo-synced rhythmic delay",
+          "steps": [
+            "Switch to Time page (page_index=1)",
+            "Set Unit (param index 0) to beats/tempo-sync mode",
+            "Set Time (param index 1) to desired note value (e.g., 1/4, 1/8)",
+            "Switch to Tone page (page_index=0)",
+            "Set FB (param index 7) to desired feedback amount (~0.3-0.6)",
+            "Switch to Details page (page_index=2)",
+            "Set Mix (param index 7) to taste (~0.3-0.5)"
+          ]
+        },
+        {
+          "name": "Stereo ping-pong delay",
+          "description": "Create wide stereo ping-pong effect",
+          "steps": [
+            "Switch to Details page (page_index=2)",
+            "Set St. Width (param index 4) to maximum (~1.0)",
+            "Set Crosfeed (param index 6) to high amount (~0.7-1.0)",
+            "Switch to Tone page (page_index=0)",
+            "Adjust FB (param index 7) for desired repeats"
+          ]
+        }
+      ]
+    },
+    "Compressor": {
+      "uuid": "ac02c3f8-7e93-4199-9751-0dccbb41a752",
+      "type": "audio_fx",
+      "description": "Dynamic range compressor with standard controls",
+      "pages": [
+        {
+          "index": 0,
+          "name": "Comp",
+          "description": "Main compressor controls",
+          "parameters": [
+            {"index": 0, "name": "Input", "unit": "dB", "description": "Input gain (-20 to +20 dB)"},
+            {"index": 1, "name": "Threshold", "unit": "dB", "description": "Compression threshold (-60 to 0 dB)"},
+            {"index": 2, "name": "Attack", "unit": "ms", "description": "Attack time (0.1 to 100 ms)"},
+            {"index": 3, "name": "Release", "unit": "ms", "description": "Release time (10 to 1000 ms)"},
+            {"index": 4, "name": "Ratio", "unit": ":1", "description": "Compression ratio (1:1 to 20:1)"},
+            {"index": 5, "name": "Output", "unit": "dB", "description": "Output makeup gain (-20 to +20 dB)"}
+          ]
+        }
+      ],
+      "common_use_cases": [
+        {
+          "name": "Gentle vocal compression",
+          "description": "Subtle compression for vocals to control dynamics",
+          "steps": [
+            "Set Threshold (param index 1) to around -15 to -10 dB (~0.7-0.8)",
+            "Set Ratio (param index 4) to 2:1 or 3:1 (~0.2-0.3)",
+            "Set Attack (param index 2) to medium (~0.3-0.5 for 5-20ms)",
+            "Set Release (param index 3) to auto or medium (~0.4-0.6)",
+            "Adjust Output (param index 5) for makeup gain as needed"
+          ]
+        },
+        {
+          "name": "Aggressive drum compression",
+          "description": "Heavy compression for punchy drums",
+          "steps": [
+            "Set Threshold (param index 1) to lower value (~0.5-0.6 for -20 to -15 dB)",
+            "Set Ratio (param index 4) to 4:1 or higher (~0.4-0.6)",
+            "Set Attack (param index 2) to fast (~0.1-0.2 for 0.1-2ms)",
+            "Set Release (param index 3) to fast (~0.2-0.4 for 50-200ms)",
+            "Increase Output (param index 5) to compensate for gain reduction"
+          ]
+        }
+      ]
+    }
+  }
+}

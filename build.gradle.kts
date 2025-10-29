@@ -41,11 +41,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 }
 
-java {
-    // Configure Java 21 LTS
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
+
 
 // Configure testing using the Test Suites DSL (avoids deprecated auto-loading in Gradle 9)
 testing {
@@ -93,4 +89,26 @@ tasks.register<Jar>("bwextension") {
 // Make the build task also create the .bwextension file
 tasks.named("build") {
     dependsOn("bwextension")
+}
+
+// Task to create the API Introspector .bwextension file
+tasks.register<Jar>("introspectorExtension") {
+    group = "build"
+    description = "Creates the API Introspector .bwextension file for debugging"
+
+    dependsOn(tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar"))
+
+    archiveFileName.set("WigAI-Introspector.bwextension")
+    destinationDirectory.set(layout.buildDirectory.dir("extensions"))
+
+    manifest {
+        attributes(
+            "Implementation-Title" to "WigAI API Introspector",
+            "Implementation-Version" to project.version.toString(),
+            "Implementation-Vendor" to project.group.toString(),
+            "Created-By" to "Gradle ${gradle.gradleVersion}",
+        )
+    }
+
+    from(tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar").map { zipTree(it.archiveFile) })
 }

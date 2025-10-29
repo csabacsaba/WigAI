@@ -23,6 +23,18 @@ import io.github.fabb.wigai.mcp.tool.GetTrackDetailsTool;
 import io.github.fabb.wigai.mcp.tool.GetDeviceDetailsTool;
 import io.github.fabb.wigai.mcp.tool.ListScenesTool;
 import io.github.fabb.wigai.mcp.tool.GetClipsInSceneTool;
+import io.github.fabb.wigai.mcp.tool.MidiTool;
+import io.github.fabb.wigai.mcp.tool.ClipWriterTool;
+import io.github.fabb.wigai.mcp.tool.DeviceInsertTool;
+// import io.github.fabb.wigai.mcp.tool.VstScannerTool; // TEMPORARILY DISABLED
+import io.github.fabb.wigai.mcp.tool.SwitchDevicePageTool;
+import io.github.fabb.wigai.mcp.tool.ListBitwigDevicesTool;
+import io.github.fabb.wigai.mcp.tool.TrackManagementTool;
+import io.github.fabb.wigai.mcp.tool.TrackPropertiesTool;
+import io.github.fabb.wigai.mcp.tool.BatchOperationsTool;
+import io.github.fabb.wigai.mcp.tool.GetDevicePageNamesTool;
+import io.github.fabb.wigai.mcp.tool.GetDevicePageParametersTool;
+import io.github.fabb.wigai.mcp.tool.GetDeviceKnowledgeTool;
 import io.modelcontextprotocol.spec.McpSchema;
 import com.bitwig.extension.controller.api.ControllerHost;
 import io.github.fabb.wigai.mcp.tool.SceneByNameTool;
@@ -148,11 +160,30 @@ public class McpServerManager {
                 DeviceParamTool.setSelectedDeviceParameterSpecification(deviceController, structuredLogger),
                 DeviceParamTool.setMultipleDeviceParametersSpecification(deviceController, structuredLogger),
                 GetDeviceDetailsTool.getDeviceDetailsSpecification(deviceController, structuredLogger),
+                SwitchDevicePageTool.switchDevicePageSpecification(bitwigApiFacade, structuredLogger),
                 ListTracksTool.specification(bitwigApiFacade, structuredLogger),
                 ListDevicesOnTrackTool.specification(bitwigApiFacade, structuredLogger),
                 GetTrackDetailsTool.specification(bitwigApiFacade, structuredLogger),
                 ListScenesTool.specification(bitwigApiFacade, structuredLogger),
-                GetClipsInSceneTool.getClipsInSceneSpecification(clipSceneController, structuredLogger)
+                GetClipsInSceneTool.getClipsInSceneSpecification(clipSceneController, structuredLogger),
+                MidiTool.specification(bitwigApiFacade, structuredLogger),
+                ClipWriterTool.specification(bitwigApiFacade, structuredLogger),
+                ClipWriterTool.writeNoteSpecification(bitwigApiFacade, structuredLogger),
+                ClipWriterTool.writeNotesSpecification(bitwigApiFacade, structuredLogger),
+                ClipWriterTool.clearClipSpecification(bitwigApiFacade, structuredLogger),
+                DeviceInsertTool.insertBitwigDeviceSpecification(bitwigApiFacade, structuredLogger),
+                ListBitwigDevicesTool.specification(structuredLogger),
+                TrackManagementTool.createInstrumentTrackSpecification(bitwigApiFacade, structuredLogger),
+                TrackManagementTool.createAudioTrackSpecification(bitwigApiFacade, structuredLogger),
+                TrackManagementTool.createEffectTrackSpecification(bitwigApiFacade, structuredLogger),
+                TrackManagementTool.deleteTrackSpecification(bitwigApiFacade, structuredLogger),
+                TrackPropertiesTool.setTrackPropertiesSpecification(bitwigApiFacade, structuredLogger),
+                TrackPropertiesTool.setTrackSendSpecification(bitwigApiFacade, structuredLogger),
+                BatchOperationsTool.specification(bitwigApiFacade, structuredLogger),
+                GetDevicePageNamesTool.specification(bitwigApiFacade, structuredLogger),
+                GetDevicePageParametersTool.specification(bitwigApiFacade, structuredLogger)
+                // GetDeviceKnowledgeTool.specification(structuredLogger) // DISABLED - too much context for small LLMs
+                // VstScannerTool.scanPluginsSpecification(bitwigApiFacade.getVstPluginScanner(), structuredLogger) // TEMPORARILY DISABLED
             )
             .build();
 

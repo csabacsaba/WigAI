@@ -94,6 +94,31 @@ public class ParameterValidator {
     }
 
     /**
+     * Validates and extracts an optional integer parameter.
+     *
+     * @param arguments The arguments map
+     * @param parameterName The parameter name
+     * @param operation The operation context
+     * @return The integer value, or null if not present
+     * @throws BitwigApiException if the parameter is present but not a number
+     */
+    public static Integer validateOptionalInteger(Map<String, Object> arguments, String parameterName, String operation) {
+        Object value = arguments.get(parameterName);
+        if (value == null) {
+            return null;
+        }
+        if (!(value instanceof Number)) {
+            throw new BitwigApiException(
+                ErrorCode.INVALID_PARAMETER_TYPE,
+                operation,
+                parameterName + " must be an integer",
+                Map.of("parameter", parameterName, "value", value)
+            );
+        }
+        return ((Number) value).intValue();
+    }
+
+    /**
      * Validates and extracts a required double parameter.
      *
      * @param arguments The arguments map

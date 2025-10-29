@@ -128,7 +128,7 @@ public class ListDevicesOnTrackTool {
         int paramCount = 0;
         if (trackIndex != null) paramCount++;
         if (trackName != null) paramCount++;
-        if (getSelected != null) paramCount++;
+        if (getSelected != null && getSelected) paramCount++;  // Only count if explicitly true
 
         if (paramCount > 1) {
             throw new IllegalArgumentException(
