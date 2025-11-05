@@ -13,6 +13,21 @@
       "pages": [
         {
           "index": 0,
+          "name": "Band Types",
+          "description": "Filter type selection for each EQ band",
+          "parameters": [
+            {"index": 0, "name": "Band 1 Mode", "unit": "", "description": "Band 1 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 1, "name": "Band 2 Mode", "unit": "", "description": "Band 2 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 2, "name": "Band 3 Mode", "unit": "", "description": "Band 3 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 3, "name": "Band 4 Mode", "unit": "", "description": "Band 4 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 4, "name": "Band 5 Mode", "unit": "", "description": "Band 5 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 5, "name": "Band 6 Mode", "unit": "", "description": "Band 6 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 6, "name": "Band 7 Mode", "unit": "", "description": "Band 7 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}},
+            {"index": 7, "name": "Band 8 Mode", "unit": "", "description": "Band 8 filter type", "values": {"0.0": "Off", "0.071": "Low-cut 1°", "0.143": "Low-cut 2°", "0.214": "Low-cut 4°", "0.286": "Low-cut 6°", "0.357": "Low-cut 8°", "0.429": "Low-shelf", "0.5": "Bell", "0.571": "High-cut 1°", "0.643": "High-cut 2°", "0.714": "High-cut 4°", "0.786": "High-cut 6°", "0.857": "High-cut 8°", "0.929": "High-shelf", "1.0": "Notch"}}
+          ]
+        },
+        {
+          "index": 1,
           "name": "Gains",
           "description": "Gain controls for each EQ band",
           "parameters": [
@@ -27,7 +42,7 @@
           ]
         },
         {
-          "index": 1,
+          "index": 2,
           "name": "Freqs",
           "description": "Frequency controls for each EQ band",
           "parameters": [
@@ -42,7 +57,7 @@
           ]
         },
         {
-          "index": 2,
+          "index": 3,
           "name": "Qs",
           "description": "Q factor (bandwidth) controls for parametric bands",
           "parameters": [
@@ -60,12 +75,12 @@
       "common_use_cases": [
         {
           "name": "Remove sub frequencies below 120Hz",
-          "description": "Use Band 1 (low shelf) to cut frequencies below 120Hz",
+          "description": "Use Band 1 with Low-cut filter to remove frequencies below 120Hz",
           "steps": [
-            "Switch to Freqs page (page_index=1)",
-            "Set Band 1 Freq (param index 0) to 120Hz (normalized value ~0.1-0.2)",
-            "Switch to Gains page (page_index=0)",
-            "Set Band 1 Gain (param index 0) to negative value (e.g., 0.0 = -12dB)"
+            "Switch to Band Types page (page_index=0)",
+            "Set Band 1 Mode (param index 0) to Low-cut 2° (value ~0.143)",
+            "Switch to Freqs page (page_index=2)",
+            "Set Band 1 Freq (param index 0) to 120Hz (normalized value)"
           ]
         }
       ]

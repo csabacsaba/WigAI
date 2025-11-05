@@ -57,6 +57,11 @@ public class TrackPropertiesTool {
                   "description": "Pan position 0.0-1.0, where 0.5 is center (optional)",
                   "minimum": 0.0,
                   "maximum": 1.0
+                },
+                "color": {
+                  "type": "string",
+                  "description": "Track color in rgb(r,g,b) format with values 0-255 (optional)",
+                  "pattern": "^rgb\\\\(\\\\d{1,3},\\\\d{1,3},\\\\d{1,3}\\\\)$"
                 }
               },
               "required": ["track_index"]
@@ -64,7 +69,7 @@ public class TrackPropertiesTool {
 
         var tool = McpSchema.Tool.builder()
             .name("set_track_properties")
-            .description("Set track properties: mute, solo, arm, volume, pan. All properties except track_index are optional.")
+            .description("Set track properties: mute, solo, arm, volume, pan, color. All properties except track_index are optional.")
             .inputSchema(setTrackPropertiesSchema)
             .build();
 
@@ -94,8 +99,10 @@ public class TrackPropertiesTool {
                         pan = panObj instanceof Integer ? ((Integer) panObj).doubleValue() : (Double) panObj;
                     }
 
+                    String color = args.containsKey("color") ? (String) args.get("color") : null;
+
                     // Apply the properties
-                    bitwigApiFacade.setTrackProperties(trackIndex, mute, solo, arm, volume, pan);
+                    bitwigApiFacade.setTrackProperties(trackIndex, mute, solo, arm, volume, pan, color);
 
                     // Build response
                     Map<String, Object> responseData = new LinkedHashMap<>();
@@ -107,6 +114,7 @@ public class TrackPropertiesTool {
                     if (arm != null) responseData.put("arm", arm);
                     if (volume != null) responseData.put("volume", volume);
                     if (pan != null) responseData.put("pan", pan);
+                    if (color != null) responseData.put("color", color);
                     
                     responseData.put("message", "Successfully set track properties");
 

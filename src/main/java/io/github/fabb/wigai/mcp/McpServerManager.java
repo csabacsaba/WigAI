@@ -34,6 +34,8 @@ import io.github.fabb.wigai.mcp.tool.TrackPropertiesTool;
 import io.github.fabb.wigai.mcp.tool.BatchOperationsTool;
 import io.github.fabb.wigai.mcp.tool.GetDevicePageNamesTool;
 import io.github.fabb.wigai.mcp.tool.GetDevicePageParametersTool;
+import io.github.fabb.wigai.mcp.tool.GetAllDevicePagesParametersTool;
+import io.github.fabb.wigai.mcp.tool.SetAllDevicePagesParametersTool;
 import io.github.fabb.wigai.mcp.tool.GetDeviceKnowledgeTool;
 import io.modelcontextprotocol.spec.McpSchema;
 import com.bitwig.extension.controller.api.ControllerHost;
@@ -181,8 +183,10 @@ public class McpServerManager {
                 TrackPropertiesTool.setTrackSendSpecification(bitwigApiFacade, structuredLogger),
                 BatchOperationsTool.specification(bitwigApiFacade, structuredLogger),
                 GetDevicePageNamesTool.specification(bitwigApiFacade, structuredLogger),
-                GetDevicePageParametersTool.specification(bitwigApiFacade, structuredLogger)
-                // GetDeviceKnowledgeTool.specification(structuredLogger) // DISABLED - too much context for small LLMs
+                GetDevicePageParametersTool.specification(bitwigApiFacade, structuredLogger),
+                GetAllDevicePagesParametersTool.specification(bitwigApiFacade, structuredLogger),
+                SetAllDevicePagesParametersTool.specification(bitwigApiFacade, structuredLogger),
+                GetDeviceKnowledgeTool.specification(structuredLogger)
                 // VstScannerTool.scanPluginsSpecification(bitwigApiFacade.getVstPluginScanner(), structuredLogger) // TEMPORARILY DISABLED
             )
             .build();

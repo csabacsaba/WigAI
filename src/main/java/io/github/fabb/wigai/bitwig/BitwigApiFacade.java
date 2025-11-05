@@ -2676,7 +2676,7 @@ public class BitwigApiFacade {
     // ========================================
 
     /**
-     * Sets track properties (mute, solo, arm, volume, pan).
+     * Sets track properties (mute, solo, arm, volume, pan, color).
      *
      * @param trackIndex The index of the track (0-based)
      * @param mute Optional mute state
@@ -2684,10 +2684,11 @@ public class BitwigApiFacade {
      * @param arm Optional arm state
      * @param volume Optional volume (0.0-1.0)
      * @param pan Optional pan (0.0-1.0, 0.5 is center)
+     * @param color Optional color in rgb(r,g,b) format with values 0-255
      * @throws BitwigApiException if track index is invalid or operation fails
      */
     public void setTrackProperties(int trackIndex, Boolean mute, Boolean solo, Boolean arm, 
-                                   Double volume, Double pan) throws BitwigApiException {
+                                   Double volume, Double pan, String color) throws BitwigApiException {
         final String operation = "setTrackProperties";
         logger.info("BitwigApiFacade: Setting track properties for track " + trackIndex);
 
@@ -2747,6 +2748,23 @@ public class BitwigApiFacade {
                 }
                 track.pan().set(pan);
                 logger.info("BitwigApiFacade: Set pan to " + pan);
+            }
+
+            if (color != null && !color.isEmpty()) {
+                try {
+                    String[] rgb = color.replace("rgb(", "").replace(")", "").split(",");
+                    float r = Float.parseFloat(rgb[0].trim()) / 255.0f;
+                    float g = Float.parseFloat(rgb[1].trim()) / 255.0f;
+                    float b = Float.parseFloat(rgb[2].trim()) / 255.0f;
+                    track.color().set(r, g, b);
+                    logger.info("BitwigApiFacade: Set color to " + color);
+                } catch (Exception e) {
+                    throw new BitwigApiException(
+                        ErrorCode.INVALID_PARAMETER,
+                        operation,
+                        "Invalid color format. Expected rgb(r,g,b) with values 0-255, got: " + color
+                    );
+                }
             }
 
             logger.info("BitwigApiFacade: Successfully set track properties");
@@ -3085,12 +3103,20 @@ public class BitwigApiFacade {
                 }
 
                 // Select the device if needed - this makes cursorDevice point to this device
-                if (currentlySelectedDeviceIndex == null || !currentlySelectedDeviceIndex.equals(deviceIndex)) {
-                    device.selectInEditor();
-                    Thread.sleep(150);
-                    currentlySelectedDeviceIndex = deviceIndex;
-                    currentlySelectedPageIndex = null; // Reset page when switching device
-                }
+                // IMPORTANT: Always select the device to ensure cache is fresh, even if it was previously selected
+                device.selectInEditor();
+                Thread.sleep(150);
+                currentlySelectedDeviceIndex = deviceIndex;
+                currentlySelectedPageIndex = null; // Reset page when switching device
+                logger.info("BitwigApiFacade: Selected device at index " + deviceIndex + " for fresh page names retrieval");
+
+                // Wait for deviceParameterBank to sync with the newly selected device
+                Thread.sleep(200);
+
+                // CRITICAL: Force refresh of pageNames by first checking pageCount
+                int pageCount = deviceParameterBank.pageCount().get();
+                logger.info("BitwigApiFacade: Device has " + pageCount + " pages");
+                Thread.sleep(100);
 
                 // Now use the already-initialized deviceParameterBank which follows cursorDevice
                 String[] pageNamesArray = deviceParameterBank.pageNames().get();
@@ -3157,12 +3183,11 @@ public class BitwigApiFacade {
                 }
 
                 // Select the device if needed - this makes cursorDevice point to this device
-                if (currentlySelectedDeviceIndex == null || !currentlySelectedDeviceIndex.equals(deviceIndex)) {
-                    device.selectInEditor();
-                    Thread.sleep(150);
-                    currentlySelectedDeviceIndex = deviceIndex;
-                    currentlySelectedPageIndex = null; // Reset page when switching device
-                }
+                // IMPORTANT: Always select the device to ensure cache is fresh
+                device.selectInEditor();
+                Thread.sleep(150);
+                currentlySelectedDeviceIndex = deviceIndex;
+                currentlySelectedPageIndex = null; // Reset page when switching device
 
                 // Now use the already-initialized deviceParameterBank which follows cursorDevice
                 List<Map<String, Object>> parameters = new ArrayList<>();
@@ -3233,6 +3258,7 @@ public class BitwigApiFacade {
 
             try {
                 // Check if we're already on the requested device and page
+                // IMPORTANT: If currentlySelectedPageIndex is null, we must still switch the page!
                 if (currentlySelectedTrackIndex != null && currentlySelectedTrackIndex.equals(trackIndex) &&
                     currentlySelectedDeviceIndex != null && currentlySelectedDeviceIndex.equals(deviceIndex) &&
                     currentlySelectedPageIndex != null && currentlySelectedPageIndex.equals(pageIndex)) {
@@ -3267,12 +3293,11 @@ public class BitwigApiFacade {
                     currentlySelectedPageIndex = null; // Reset page when switching device
                 }
 
-                // Switch page if needed
-                if (currentlySelectedPageIndex == null || !currentlySelectedPageIndex.equals(pageIndex)) {
-                    deviceParameterBank.selectedPageIndex().set(pageIndex);
-                    Thread.sleep(150);
-                    currentlySelectedPageIndex = pageIndex;
-                }
+                // Switch page - ALWAYS perform the switch, even if cache says we're on that page
+                // This is critical because the cache can be stale
+                deviceParameterBank.selectedPageIndex().set(pageIndex);
+                Thread.sleep(250);
+                currentlySelectedPageIndex = pageIndex;
 
                 logger.info("BitwigApiFacade: Successfully switched to track " + trackIndex + ", device " + deviceIndex + ", page " + pageIndex);
                 return true;
@@ -3284,5 +3309,302 @@ public class BitwigApiFacade {
                 return false;
             }
         });
+    }
+
+    /**
+     * Gets the name of a device on a specific track.
+     *
+     * @param trackIndex The index of the track (0-based)
+     * @param deviceIndex The index of the device on the track (0-based)
+     * @return The device name
+     * @throws BitwigApiException if parameters are invalid
+     */
+    public String getDeviceNameOnTrack(int trackIndex, int deviceIndex) throws BitwigApiException {
+        final String operation = "getDeviceNameOnTrack";
+        
+        return WigAIErrorHandler.executeWithErrorHandling(operation, () -> {
+            if (trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Track index must be between 0 and " + (trackBank.getSizeOfBank() - 1) + ", got: " + trackIndex,
+                    Map.of("trackIndex", trackIndex)
+                );
+            }
+
+            if (deviceIndex < 0) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Device index must be >= 0, got: " + deviceIndex,
+                    Map.of("deviceIndex", deviceIndex)
+                );
+            }
+
+            try {
+                DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
+                Device device = deviceBank.getItemAt(deviceIndex);
+
+                if (!device.exists().get()) {
+                    return "Unknown Device";
+                }
+
+                return device.name().get();
+            } catch (Exception e) {
+                logger.info("BitwigApiFacade: Failed to get device name: " + e.getClass().getSimpleName() +
+                           " - " + (e.getMessage() != null ? e.getMessage() : ""));
+                return "Unknown Device";
+            }
+        });
+    }
+
+    /**
+     * Sets parameters for the current page of a device.
+     *
+     * @param trackIndex The index of the track (0-based)
+     * @param deviceIndex The index of the device on the track (0-based)
+     * @param parameters List of parameter maps with "parameter_index" and "value" keys
+     * @throws BitwigApiException if parameters are invalid
+     */
+    public void setDevicePageParameters(int trackIndex, int deviceIndex, List<Map<String, Object>> parameters) throws BitwigApiException {
+        final String operation = "setDevicePageParameters";
+        
+        WigAIErrorHandler.executeWithErrorHandling(operation, () -> {
+            if (trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Track index must be between 0 and " + (trackBank.getSizeOfBank() - 1) + ", got: " + trackIndex,
+                    Map.of("trackIndex", trackIndex)
+                );
+            }
+
+            if (deviceIndex < 0) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Device index must be >= 0, got: " + deviceIndex,
+                    Map.of("deviceIndex", deviceIndex)
+                );
+            }
+
+            try {
+                // Select the track if needed
+                if (currentlySelectedTrackIndex == null || !currentlySelectedTrackIndex.equals(trackIndex)) {
+                    Track track = trackBank.getItemAt(trackIndex);
+                    track.selectInEditor();
+                    Thread.sleep(50);
+                    currentlySelectedTrackIndex = trackIndex;
+                }
+
+                // Get the device bank for this track and check if device exists
+                DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
+                Device device = deviceBank.getItemAt(deviceIndex);
+
+                if (!device.exists().get()) {
+                    logger.info("BitwigApiFacade: Device at index " + deviceIndex + " does not exist on track " + trackIndex);
+                    return null;
+                }
+
+                // Select the device if needed
+                if (currentlySelectedDeviceIndex == null || !currentlySelectedDeviceIndex.equals(deviceIndex)) {
+                    device.selectInEditor();
+                    Thread.sleep(150);
+                    currentlySelectedDeviceIndex = deviceIndex;
+                    currentlySelectedPageIndex = null;
+                }
+
+                // Set each parameter
+                for (Map<String, Object> param : parameters) {
+                    Integer paramIndex = ((Number) param.get("index")).intValue();
+                    Double paramValue = ((Number) param.get("value")).doubleValue();
+                    
+                    if (paramIndex >= 0 && paramIndex < deviceParameterBank.getParameterCount()) {
+                        RemoteControl remote = deviceParameterBank.getParameter(paramIndex);
+                        remote.value().set(paramValue);
+                        logger.info("BitwigApiFacade: Set parameter " + paramIndex + " to " + paramValue);
+                    }
+                }
+
+                Thread.sleep(100);
+                logger.info("BitwigApiFacade: Set " + parameters.size() + " parameters for device " + deviceIndex + " on track " + trackIndex);
+                return null;
+            } catch (Exception e) {
+                logger.info("BitwigApiFacade: Failed to set device parameters: " + e.getClass().getSimpleName() +
+                           " - " + (e.getMessage() != null ? e.getMessage() : ""));
+                e.printStackTrace();
+                throw new BitwigApiException(
+                    ErrorCode.BITWIG_API_ERROR,
+                    operation,
+                    "Failed to set device parameters: " + e.getMessage(),
+                    Map.of("trackIndex", trackIndex, "deviceIndex", deviceIndex, "parameterCount", parameters.size())
+                );
+            }
+        });
+    }
+
+    /**
+     * Gets device page parameters for a specific page index using Moss's approach.
+     * Reads directly from deviceParameterBank push buffer WITHOUT page switching in the UI.
+     * 
+     * @param trackIndex Track index (0-based)
+     * @param devicePosition Device position on track (0-based)
+     * @param pageIndex The specific page index to read (0-based)
+     * @return List of parameter info for the given page
+     * @throws BitwigApiException if track/device is invalid
+     */
+    public List<Map<String, Object>> getDevicePageParametersForPageIndex(Integer trackIndex, Integer devicePosition, int pageIndex) throws BitwigApiException {
+        final String operation = "getDevicePageParametersForPageIndex";
+        logger.info("BitwigApiFacade: Getting device page parameters - track: " + trackIndex + 
+                   ", device: " + devicePosition + ", page: " + pageIndex);
+
+        return WigAIErrorHandler.executeWithErrorHandling(operation, () -> {
+            // Validate track index
+            if (trackIndex == null || trackIndex < 0 || trackIndex >= trackBank.getSizeOfBank()) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Track index must be between 0 and " + (trackBank.getSizeOfBank() - 1) + ", got: " + trackIndex,
+                    Map.of("trackIndex", String.valueOf(trackIndex))
+                );
+            }
+
+            // Validate device position
+            if (devicePosition == null || devicePosition < 0) {
+                throw new BitwigApiException(
+                    ErrorCode.INVALID_RANGE,
+                    operation,
+                    "Device position must be >= 0, got: " + devicePosition,
+                    Map.of("devicePosition", String.valueOf(devicePosition))
+                );
+            }
+
+            List<Map<String, Object>> parameters = new ArrayList<>();
+
+            try {
+                Track track = trackBank.getItemAt(trackIndex);
+                if (!track.exists().get()) {
+                    throw new BitwigApiException(
+                        ErrorCode.TRACK_NOT_FOUND,
+                        operation,
+                        "Track at index " + trackIndex + " does not exist",
+                        Map.of("trackIndex", String.valueOf(trackIndex))
+                    );
+                }
+
+                DeviceBank trackDeviceBank = trackDeviceBanks.get(trackIndex);
+                if (devicePosition >= trackDeviceBank.getSizeOfBank()) {
+                    logger.info("BitwigApiFacade: Device position " + devicePosition + " out of bounds for track " + trackIndex);
+                    return parameters;
+                }
+
+                Device device = trackDeviceBank.getItemAt(devicePosition);
+                if (!device.exists().get()) {
+                    logger.info("BitwigApiFacade: Device at position " + devicePosition + " does not exist on track " + trackIndex);
+                    return parameters;
+                }
+
+                // MOSS'S TRICK: Use the push buffer directly
+                // Select the device
+                device.selectInEditor();
+                Thread.sleep(50);
+
+                // Set the page index
+                deviceParameterBank.selectedPageIndex().set(pageIndex);
+                Thread.sleep(50);
+
+                // Read all parameters from this page
+                for (int i = 0; i < 8; i++) {
+                    RemoteControl parameter = deviceParameterBank.getParameter(i);
+                    boolean exists = parameter.exists().get();
+
+                    if (exists) {
+                        String name = parameter.name().get();
+                        double value = parameter.value().get();
+                        String displayValue = parameter.displayedValue().get();
+
+                        // Handle null or empty names
+                        if (name != null && name.trim().isEmpty()) {
+                            name = null;
+                        }
+
+                        Map<String, Object> paramMap = new LinkedHashMap<>();
+                        paramMap.put("index", i);
+                        paramMap.put("name", name);
+                        paramMap.put("value", value);
+                        paramMap.put("display_value", displayValue);
+                        parameters.add(paramMap);
+                    }
+                }
+
+                logger.info("BitwigApiFacade: Retrieved " + parameters.size() + " parameters from page " + pageIndex);
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BitwigApiException(
+                    ErrorCode.OPERATION_FAILED,
+                    operation,
+                    "Thread interrupted while reading device parameters: " + e.getMessage(),
+                    Map.of("pageIndex", String.valueOf(pageIndex))
+                );
+            } catch (Exception e) {
+                logger.info("BitwigApiFacade: Failed to get page parameters: " + e.getClass().getSimpleName() +
+                           " - " + (e.getMessage() != null ? e.getMessage() : ""));
+                e.printStackTrace();
+                return parameters;
+            }
+
+            return parameters;
+        });
+    }
+
+    /**
+     * Force a complete cache refresh for device page names.
+     * Call this when switching between devices to ensure pageNames() is fresh.
+     */
+    public void forceRefreshDevicePageNamesCache(int trackIndex, int deviceIndex) throws BitwigApiException {
+        final String operation = "forceRefreshDevicePageNamesCache";
+        logger.info("BitwigApiFacade: Force refreshing page names cache - track: " + trackIndex + ", device: " + deviceIndex);
+
+        try {
+            // Select the track
+            if (currentlySelectedTrackIndex == null || !currentlySelectedTrackIndex.equals(trackIndex)) {
+                Track track = trackBank.getItemAt(trackIndex);
+                track.selectInEditor();
+                Thread.sleep(50);
+                currentlySelectedTrackIndex = trackIndex;
+            }
+
+            // Get the device and select it
+            DeviceBank deviceBank = trackDeviceBanks.get(trackIndex);
+            Device device = deviceBank.getItemAt(deviceIndex);
+
+            if (!device.exists().get()) {
+                logger.info("BitwigApiFacade: Device does not exist at index " + deviceIndex);
+                return;
+            }
+
+            // CRITICAL: Select device and wait longer
+            device.selectInEditor();
+            Thread.sleep(250);
+            
+            // Reset internal cache markers
+            currentlySelectedDeviceIndex = deviceIndex;
+            currentlySelectedPageIndex = null;
+            
+            // Force refresh by reading pageCount (this triggers Bitwig sync)
+            int pageCount = deviceParameterBank.pageCount().get();
+            logger.info("BitwigApiFacade: Page count after refresh: " + pageCount);
+            
+            Thread.sleep(150);
+            
+            // Now pageNames() should be fresh
+            String[] pageNamesArray = deviceParameterBank.pageNames().get();
+            logger.info("BitwigApiFacade: Cache refresh complete. Pages: " + Arrays.asList(pageNamesArray));
+
+        } catch (Exception e) {
+            logger.info("BitwigApiFacade: Failed to refresh cache: " + e.getClass().getSimpleName());
+            e.printStackTrace();
+        }
     }
 }
