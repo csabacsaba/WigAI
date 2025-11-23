@@ -85,14 +85,14 @@
         }
       ]
     },
-    "Filter+": {
-      "uuid": "6d621c1c-ab64-43b4-aea3-dad37e6f649c",
+    "Filter": {
+      "uuid": "4ccfc70e-59bd-4e97-a8a7-d8cdce88bf42",
       "type": "audio_fx",
       "description": "Versatile filter with LFO modulation and multiple filter types",
       "pages": [
         {
           "index": 0,
-          "name": "Filter+",
+          "name": "Filter",
           "description": "Main filter controls with LFO modulation",
           "parameters": [
             {"index": 0, "name": "LFO Skew", "unit": "%", "description": "Shapes the LFO waveform (0-100%)"},
@@ -128,7 +128,7 @@
       ]
     },
     "Reverb": {
-      "uuid": "b94713ba-65c8-4a28-9916-f08ac5aa73dc",
+      "uuid": "5a1cb339-1c4a-4cc7-9cae-bd7a2058153d",
       "type": "audio_fx",
       "description": "Algorithmic reverb with multiple room types and detailed control",
       "pages": [
@@ -203,7 +203,7 @@
       ]
     },
     "Delay+": {
-      "uuid": "c5b38bbd-6530-47e4-af32-d09477e1ae40",
+      "uuid": "f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9",
       "type": "audio_fx",
       "description": "Flexible delay with multiple timing options and feedback controls",
       "pages": [

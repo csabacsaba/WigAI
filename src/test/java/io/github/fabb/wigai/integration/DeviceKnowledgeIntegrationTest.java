@@ -26,10 +26,10 @@ public class DeviceKnowledgeIntegrationTest {
     // Expected UUIDs from tool descriptions - keep these in sync!
     private static final Map<String, String> EXPECTED_DEVICE_UUIDS = Map.of(
         "EQ+", "e4815188-ba6f-4d14-bcfc-2dcb8f778ccb",
-        "Filter+", "6d621c1c-ab64-43b4-aea3-dad37e6f649c",
-        "Compressor", "ac02c3f8-7e93-4199-9751-0dccbb41a752",
-        "Delay+", "c5b38bbd-6530-47e4-af32-d09477e1ae40",
-        "Reverb", "b94713ba-65c8-4a28-9916-f08ac5aa73dc"
+        "Filter", "4ccfc70e-59bd-4e97-a8a7-d8cdce88bf42",
+        "Compressor", "2b1b4787-8d74-4138-877b-9197209eef0f",
+        "Delay+", "f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9",
+        "Reverb", "5a1cb339-1c4a-4cc7-9cae-bd7a2058153d"
     );
 
     @Test
@@ -172,28 +172,29 @@ public class DeviceKnowledgeIntegrationTest {
 
         assertNotNull(eqPlus, "EQ+ should exist");
         var pages = eqPlus.getAsJsonArray("pages");
-        assertEquals(3, pages.size(), "EQ+ should have exactly 3 pages");
+        assertEquals(4, pages.size(), "EQ+ should have exactly 4 pages");
 
         // Verify page names
-        assertEquals("Gains", pages.get(0).getAsJsonObject().get("name").getAsString());
-        assertEquals("Freqs", pages.get(1).getAsJsonObject().get("name").getAsString());
-        assertEquals("Qs", pages.get(2).getAsJsonObject().get("name").getAsString());
+        assertEquals("Band Types", pages.get(0).getAsJsonObject().get("name").getAsString());
+        assertEquals("Gains", pages.get(1).getAsJsonObject().get("name").getAsString());
+        assertEquals("Freqs", pages.get(2).getAsJsonObject().get("name").getAsString());
+        assertEquals("Qs", pages.get(3).getAsJsonObject().get("name").getAsString());
     }
 
     @Test
-    public void testFilterPlusHasOnePageWithEightParameters() throws Exception {
+    public void testFilterHasOnePageWithEightParameters() throws Exception {
         JsonObject devices = loadDeviceKnowledgeBase();
-        JsonObject filterPlus = devices.getAsJsonObject("Filter+");
+        JsonObject filter = devices.getAsJsonObject("Filter");
 
-        assertNotNull(filterPlus, "Filter+ should exist");
-        var pages = filterPlus.getAsJsonArray("pages");
-        assertEquals(1, pages.size(), "Filter+ should have exactly 1 page");
+        assertNotNull(filter, "Filter should exist");
+        var pages = filter.getAsJsonArray("pages");
+        assertEquals(1, pages.size(), "Filter should have exactly 1 page");
 
         JsonObject page = pages.get(0).getAsJsonObject();
-        assertEquals("Filter+", page.get("name").getAsString());
+        assertEquals("Filter", page.get("name").getAsString());
 
         var parameters = page.getAsJsonArray("parameters");
-        assertEquals(8, parameters.size(), "Filter+ should have 8 parameters");
+        assertEquals(8, parameters.size(), "Filter should have 8 parameters");
     }
 
     @Test

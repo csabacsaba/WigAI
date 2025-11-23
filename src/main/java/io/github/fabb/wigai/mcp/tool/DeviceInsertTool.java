@@ -59,10 +59,10 @@ public class DeviceInsertTool {
                 \
                 Available devices (call get_device_knowledge for UUIDs): \
                 - EQ+ (UUID: e4815188-ba6f-4d14-bcfc-2dcb8f778ccb) \
-                - Filter+ (UUID: 6d621c1c-ab64-43b4-aea3-dad37e6f649c) \
-                - Compressor (UUID: ac02c3f8-7e93-4199-9751-0dccbb41a752) \
-                - Delay+ (UUID: c5b38bbd-6530-47e4-af32-d09477e1ae40) \
-                - Reverb (UUID: b94713ba-65c8-4a28-9916-f08ac5aa73dc)
+                - Filter (UUID: 4ccfc70e-59bd-4e97-a8a7-d8cdce88bf42) \
+                - Compressor (UUID: 2b1b4787-8d74-4138-877b-9197209eef0f) \
+                - Delay+ (UUID: f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9) \
+                - Reverb (UUID: 5a1cb339-1c4a-4cc7-9cae-bd7a2058153d)
                 """)
             .inputSchema(insertBitwigDeviceSchema)
             .build();
