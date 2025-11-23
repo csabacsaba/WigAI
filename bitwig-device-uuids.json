@@ -3,9 +3,9 @@
     "version": "1.0.0",
     "bitwig_version": "5.0+",
     "api_version": 19,
-    "last_updated": "2025-10-24",
+    "last_updated": "2025-01-23",
     "contributors": ["csabagodor"],
-    "notes": "This is a community-maintained registry of Bitwig device UUIDs for programmatic device insertion via the Controller API."
+    "notes": "This is a community-maintained registry of Bitwig device UUIDs for programmatic device insertion via the Controller API. UUIDs verified against DrivenByMoss v25.0.0"
   },
   "devices": {
     "instruments": {
@@ -16,10 +16,10 @@
     },
     "audio_fx": {
       "EQ+": "e4815188-ba6f-4d14-bcfc-2dcb8f778ccb",
-      "Compressor+": "42b32cd2-6275-4ff1-970f-4fac71d15ad9",
+      "Compressor": "2b1b4787-8d74-4138-877b-9197209eef0f",
       "Delay+": "f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9",
       "Reverb": "5a1cb339-1c4a-4cc7-9cae-bd7a2058153d",
-      "Filter+": "6d621c1c-ab64-43b4-aea3-dad37e6f649c",
+      "Filter": "4ccfc70e-59bd-4e97-a8a7-d8cdce88bf42",
       "Distortion": "b5b2b08e-730e-4192-be71-f572ceb5069b"
     },
     "note_fx": {

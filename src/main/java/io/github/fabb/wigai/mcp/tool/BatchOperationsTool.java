@@ -66,7 +66,7 @@ public class BatchOperationsTool {
                 Supported operations: create_tracks, insert_device_on_tracks, create_clips, clear_clips, write_notes_to_clips, set_clip_properties, switch_device_page_on_tracks, set_device_parameters_on_tracks. \
                 \
                 IMPORTANT: When using 'insert_device_on_tracks', you MUST use correct device UUIDs! Call 'get_device_knowledge' tool first to get UUIDs. \
-                Device UUIDs: EQ+ = e4815188-ba6f-4d14-bcfc-2dcb8f778ccb, Filter+ = 6d621c1c-ab64-43b4-aea3-dad37e6f649c, Compressor = ac02c3f8-7e93-4199-9751-0dccbb41a752, Delay+ = c5b38bbd-6530-47e4-af32-d09477e1ae40, Reverb = b94713ba-65c8-4a28-9916-f08ac5aa73dc \
+                Device UUIDs: EQ+ = e4815188-ba6f-4d14-bcfc-2dcb8f778ccb, Filter = 4ccfc70e-59bd-4e97-a8a7-d8cdce88bf42, Compressor = 2b1b4787-8d74-4138-877b-9197209eef0f, Delay+ = f2baa2a8-36c5-4a79-b1d9-a4e461c45ee9, Reverb = 5a1cb339-1c4a-4cc7-9cae-bd7a2058153d \
                 IMPORTANT: All device parameter values must be normalized between 0.0 and 1.0. Do NOT use raw values like Hz or dB. \
                 IMPORTANT: page_index must be a NUMBER (0, 1, 2...), NOT a page name. For EQ+: 0=Gains, 1=Freqs, 2=Qs. \
                 \
