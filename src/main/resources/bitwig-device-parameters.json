@@ -281,7 +281,7 @@
       ]
     },
     "Compressor": {
-      "uuid": "ac02c3f8-7e93-4199-9751-0dccbb41a752",
+      "uuid": "2b1b4787-8d74-4138-877b-9197209eef0f",
       "type": "audio_fx",
       "description": "Dynamic range compressor with standard controls",
       "pages": [
