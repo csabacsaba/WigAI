@@ -37,6 +37,13 @@ import io.github.fabb.wigai.mcp.tool.GetDevicePageParametersTool;
 import io.github.fabb.wigai.mcp.tool.GetAllDevicePagesParametersTool;
 import io.github.fabb.wigai.mcp.tool.SetAllDevicePagesParametersTool;
 import io.github.fabb.wigai.mcp.tool.GetDeviceKnowledgeTool;
+import io.github.fabb.wigai.mcp.tool.ListCueMarkersTool;
+import io.github.fabb.wigai.mcp.tool.tbLaunchCueMarkerTool;
+import io.github.fabb.wigai.mcp.tool.CreateCueMarkerTool;
+import io.github.fabb.wigai.mcp.tool.SetPlaybackPositionTool;
+import io.github.fabb.wigai.mcp.tool.BatchCreateCueMarkersTool;
+import io.github.fabb.wigai.mcp.tool.BatchCreateScenesAndMarkersTool;
+import io.github.fabb.wigai.mcp.tool.tbLaunchSceneTool;
 import io.modelcontextprotocol.spec.McpSchema;
 import com.bitwig.extension.controller.api.ControllerHost;
 import io.github.fabb.wigai.mcp.tool.SceneByNameTool;
@@ -186,7 +193,15 @@ public class McpServerManager {
                 GetDevicePageParametersTool.specification(bitwigApiFacade, structuredLogger),
                 GetAllDevicePagesParametersTool.specification(bitwigApiFacade, structuredLogger),
                 SetAllDevicePagesParametersTool.specification(bitwigApiFacade, structuredLogger),
-                GetDeviceKnowledgeTool.specification(structuredLogger)
+                GetDeviceKnowledgeTool.specification(structuredLogger),
+                ListCueMarkersTool.specification(bitwigApiFacade, structuredLogger),
+                tbLaunchCueMarkerTool.specification(bitwigApiFacade, structuredLogger),
+                CreateCueMarkerTool.specification(bitwigApiFacade, structuredLogger),
+                SetPlaybackPositionTool.specification(bitwigApiFacade, structuredLogger),
+                BatchCreateCueMarkersTool.specification(bitwigApiFacade, structuredLogger),
+                BatchCreateScenesAndMarkersTool.specification(bitwigApiFacade, structuredLogger),
+                // Scene tools
+                tbLaunchSceneTool.specification(bitwigApiFacade, structuredLogger)
                 // VstScannerTool.scanPluginsSpecification(bitwigApiFacade.getVstPluginScanner(), structuredLogger) // TEMPORARILY DISABLED
             )
             .build();

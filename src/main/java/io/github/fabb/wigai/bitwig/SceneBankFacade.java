@@ -133,4 +133,84 @@ public class SceneBankFacade {
             return null;
         }
     }
+
+    /**
+     * Creates a new scene at the specified index position.
+     *
+     * @param index The index where to create the scene
+     * @return true if successful, false otherwise
+     */
+    public boolean createScene(int index) {
+        if (index < 0 || index >= sceneCount) {
+            logger.warn("SceneBankFacade: Invalid scene index: " + index);
+            return false;
+        }
+
+        try {
+            Scene scene = sceneBank.getItemAt(index);
+            // Note: Bitwig will automatically create the scene if it doesn't exist
+            // when we try to set its name
+            logger.info("SceneBankFacade: Scene at index " + index + " ready");
+            return true;
+        } catch (Exception e) {
+            logger.warn("SceneBankFacade: Error creating scene: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Launches (triggers) a scene at the specified index.
+     *
+     * @param index The scene index to launch
+     * @return true if successful, false otherwise
+     */
+    public boolean launchScene(int index) {
+        if (index < 0 || index >= sceneCount) {
+            logger.warn("SceneBankFacade: Invalid scene index: " + index);
+            return false;
+        }
+
+        try {
+            Scene scene = sceneBank.getItemAt(index);
+            if (!scene.exists().get()) {
+                logger.warn("SceneBankFacade: Scene at index " + index + " does not exist");
+                return false;
+            }
+            scene.launch();
+            logger.info("SceneBankFacade: Launched scene at index " + index);
+            return true;
+        } catch (Exception e) {
+            logger.warn("SceneBankFacade: Error launching scene: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Sets the name of a scene at the specified index.
+     *
+     * @param index The scene index
+     * @param name The name to set
+     * @return true if successful, false otherwise
+     */
+    public boolean setSceneName(int index, String name) {
+        if (index < 0 || index >= sceneCount) {
+            logger.warn("SceneBankFacade: Invalid scene index: " + index);
+            return false;
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            logger.warn("SceneBankFacade: Invalid scene name");
+            return false;
+        }
+
+        try {
+            Scene scene = sceneBank.getItemAt(index);
+            scene.name().set(name);
+            logger.info("SceneBankFacade: Set scene " + index + " name to '" + name + "'");
+            return true;
+        } catch (Exception e) {
+            logger.warn("SceneBankFacade: Error setting scene name: " + e.getMessage());
+            return false;
+        }
+    }
 }

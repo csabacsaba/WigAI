@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * MCP tool for listing all scenes in the current project with their information.
+ * MCP tool for listing all scenes in the project with their information.
  */
 public class ListScenesTool {
 
@@ -35,7 +35,7 @@ public class ListScenesTool {
 
         var tool = McpSchema.Tool.builder()
             .name("list_scenes")
-            .description("List all scenes in the current project with their name and color. Returns information about scene structure.")
+            .description("List all scenes in the project with their index, name, and color. Returns information about all scenes in the current project.")
             .inputSchema(schema)
             .build();
 

@@ -50,6 +50,7 @@ public class BitwigApiFacade {
     private final CursorRemoteControlsPage deviceParameterBank;
     private final TrackBank trackBank;
     private final SceneBankFacade sceneBankFacade;
+    private final ArrangerFacade arrangerFacade;
     private final CursorTrack cursorTrack;
     private final CursorRemoteControlsPage projectParameterBank;
     private final List<DeviceBank> trackDeviceBanks;
@@ -101,6 +102,7 @@ public class BitwigApiFacade {
         // Initialize track bank for clip launching (support up to 128 tracks and 128 scenes for full functionality)
         this.trackBank = host.createTrackBank(Constants.MAX_TRACKS, 0, Constants.MAX_SCENES);
         this.sceneBankFacade = new SceneBankFacade(host, logger, Constants.MAX_SCENES); // Support up to 128 scenes for full functionality
+        this.arrangerFacade = new ArrangerFacade(host, logger); // Support for Arranger cue markers
 
         // Initialize CursorClip for writing notes to clips
         // Grid: 256 steps (16 bars * 16 steps), 128 pitches (full MIDI range)
@@ -3606,5 +3608,122 @@ public class BitwigApiFacade {
             logger.info("BitwigApiFacade: Failed to refresh cache: " + e.getClass().getSimpleName());
             e.printStackTrace();
         }
+    }
+
+    // ========================================
+    // ARRANGER / CUE MARKER METHODS
+    // ========================================
+
+    /**
+     * Gets all cue markers in the project with their details.
+     *
+     * @return A list of cue marker information maps containing index, name, position, and color
+     */
+    public List<Map<String, Object>> getAllCueMarkersInfo() {
+        logger.info("BitwigApiFacade: Getting all cue markers info");
+        return arrangerFacade.getAllCueMarkersInfo();
+    }
+
+    /**
+     * Finds the first cue marker index with the given name (case-sensitive).
+     * Returns -1 if not found.
+     */
+    public int findCueMarkerByName(String markerName) {
+        return arrangerFacade.findCueMarkerByName(markerName);
+    }
+
+    /**
+     * Launches (jumps to) a cue marker by index.
+     *
+     * @param index The marker index to launch
+     * @return true if successful, false otherwise
+     */
+    public boolean launchCueMarker(int index) {
+        return arrangerFacade.launchCueMarker(index);
+    }
+
+    /**
+     * Creates a new cue marker at the current playback position.
+     *
+     * @return true if successful, false otherwise
+     */
+    public boolean addCueMarkerAtPlaybackPosition() {
+        logger.info("BitwigApiFacade: Creating cue marker at playback position");
+        return arrangerFacade.addCueMarkerAtPlaybackPosition();
+    }
+
+    /**
+     * Sets the playback position in beats.
+     * If transport is playing, jumps to the new position immediately.
+     *
+     * @param beats The position in beats (0.0 = start of timeline)
+     */
+    public void setPlaybackPosition(double beats) {
+        logger.info("BitwigApiFacade: Setting playback position to " + beats + " beats");
+        transport.playStartPosition().set(beats);
+        if (transport.isPlaying().get()) {
+            transport.jumpToPlayStartPosition();
+        }
+    }
+
+    /**
+     * Gets whether cue markers are currently visible in the arranger.
+     *
+     * @return true if markers are visible
+     */
+    public boolean areCueMarkersVisible() {
+        return arrangerFacade.areCueMarkersVisible();
+    }
+
+    /**
+     * Sets the visibility of cue markers in the arranger.
+     *
+     * @param visible true to show markers, false to hide
+     */
+    public void setCueMarkersVisible(boolean visible) {
+        arrangerFacade.setCueMarkersVisible(visible);
+    }
+
+    /**
+     * Gets the maximum number of cue markers supported.
+     *
+     * @return The maximum number of cue markers
+     */
+    public int getMaxCueMarkers() {
+        return arrangerFacade.getMaxCueMarkers();
+    }
+
+    /**
+     * Creates a new scene at the specified index position.
+     *
+     * @param index The index where to create the scene
+     * @return true if successful, false otherwise
+     */
+    public boolean createScene(int index) {
+        logger.info("BitwigApiFacade: Creating scene at index " + index);
+        return sceneBankFacade.createScene(index);
+    }
+
+    /**
+     * Sets the name of a scene at the specified index.
+     *
+     * @param index The scene index
+     * @param name The name to set
+     * @return true if successful, false otherwise
+     */
+    public boolean setSceneName(int index, String name) {
+        logger.info("BitwigApiFacade: Setting scene " + index + " name to '" + name + "'");
+        return sceneBankFacade.setSceneName(index, name);
+    }
+
+    /**
+     * Launches (triggers) a scene at the specified index.
+     *
+     * @param index The scene index to launch
+     * @return true if successful, false otherwise
+     */
+    public boolean launchScene(int index) {
+        logger.info("BitwigApiFacade: Launching scene at index " + index);
+        return sceneBankFacade.launchScene(index);
     }
 }
