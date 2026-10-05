@@ -31,6 +31,7 @@ import io.github.fabb.wigai.mcp.tool.SwitchDevicePageTool;
 import io.github.fabb.wigai.mcp.tool.ListBitwigDevicesTool;
 import io.github.fabb.wigai.mcp.tool.TrackManagementTool;
 import io.github.fabb.wigai.mcp.tool.TrackPropertiesTool;
+import io.github.fabb.wigai.mcp.tool.DeviceLayerTool;
 import io.github.fabb.wigai.mcp.tool.BatchOperationsTool;
 import io.github.fabb.wigai.mcp.tool.GetDevicePageNamesTool;
 import io.github.fabb.wigai.mcp.tool.GetDevicePageParametersTool;
@@ -189,6 +190,8 @@ public class McpServerManager {
                 TrackManagementTool.deleteTrackSpecification(bitwigApiFacade, structuredLogger),
                 TrackPropertiesTool.setTrackPropertiesSpecification(bitwigApiFacade, structuredLogger),
                 TrackPropertiesTool.setTrackSendSpecification(bitwigApiFacade, structuredLogger),
+                DeviceLayerTool.listDeviceLayersSpecification(bitwigApiFacade.getDeviceLayerFacade(), structuredLogger),
+                DeviceLayerTool.setDeviceLayerPropertiesSpecification(bitwigApiFacade.getDeviceLayerFacade(), structuredLogger),
                 BatchOperationsTool.specification(bitwigApiFacade, structuredLogger),
                 GetDevicePageNamesTool.specification(bitwigApiFacade, structuredLogger),
                 GetDevicePageParametersTool.specification(bitwigApiFacade, structuredLogger),
